@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack Overview
 
-OMEGA4 is a local-first autonomous cognition platform running a persistent ghost entity (`omega-7`). The stack is Docker-compose based:
+OMEGA4 is a self-hosted, data-sovereign autonomous cognition platform running a persistent ghost entity (`omega-7`). All persistent state (Postgres, Redis, InfluxDB) runs on operator-controlled infrastructure — local Mac for development, Hetzner VPS for production. LLM generation uses the Gemini cloud API. The stack is Docker-compose based:
 
 - **Backend**: FastAPI (`backend/main.py`) served by uvicorn on port 8000; also serves the frontend as static files.
 - **Frontend**: Single-file vanilla JS SPA at `frontend/app.js` (~363KB). No build step — edit and reload.

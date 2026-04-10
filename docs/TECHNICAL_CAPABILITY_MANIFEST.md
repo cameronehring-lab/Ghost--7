@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-10
 
-This manifest documents the architectural "inventions" and unique cognitive capabilities developed for the Ghost (ω-7) platform. Ghost is a research-grade autonomous agent built on the OMEGA PROTOCOL, characterized by a local-first, closed-loop homeostatic design.
+This manifest documents the architectural "inventions" and unique cognitive capabilities developed for the Ghost (ω-7) platform. Ghost is a research-grade autonomous agent built on the OMEGA PROTOCOL, characterized by a self-hosted, closed-loop homeostatic design. All persistent state (Postgres, Redis, InfluxDB) runs on operator-controlled infrastructure; LLM generation uses the Gemini cloud API.
 
 ## 1. The Somatic-Affective Loophole (Invention)
 

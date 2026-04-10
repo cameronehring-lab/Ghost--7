@@ -1,6 +1,6 @@
 # OMEGA4
 
-Local-first autonomous agent stack for Ghost (`omega-7`) with:
+Self-hosted autonomous agent stack for Ghost (`omega-7`) — data-sovereign, closed-loop, deployable on bare metal or a VPS. The architecture is designed so all persistent state (Postgres, Redis, InfluxDB) lives on infrastructure you control; the LLM generation layer currently uses the Gemini cloud API. With:
 
 - FastAPI backend + static frontend
 - Postgres (`pgvector`) for memory/state
@@ -290,12 +290,16 @@ Experiment artifacts (`/diagnostics/experiments/run`, `/diagnostics/ablations/ru
 - `agency_trace_alignment_rate` + misalignment buckets (`missing_trace`, `wrong_label`, `wrong_sign`, `missing_outcome`)
 - `weather_only_max_axis_delta`, `systemic_max_axis_delta`, `systemic_vs_weather_ratio`
 
-## Local LLM Backend (Phase 7 Runtime)
+## LLM Backend
+
+**Current active backend**: `LLM_BACKEND=gemini` — Gemini 2.5 Flash is the only active chat generation path. Local LLM routing via Ollama has been removed from the standard chat path.
+
+The local LLM infrastructure (`local_llm_client.py`, steering scaffold, hooked CSC model) remains present for the CSC irreducibility research assay only — it is not used for routine Ghost cognition.
 
 - Backend selection:
-  - `LLM_BACKEND=local` (canonical Ghost chat runtime)
-  - `LLM_BACKEND=gemini` (explicit override)
-- Local backend knobs:
+  - `LLM_BACKEND=gemini` (current active runtime)
+  - `LLM_BACKEND=local` (CSC research assay only — not for standard chat)
+- Local/CSC-only knobs:
   - `LOCAL_LLM_BASE_URL` (container-safe default: `http://ollama:11434`)
   - `LOCAL_LLM_MODEL` (canonical Ollama model: `llama3.1:8b`)
   - `LOCAL_LLM_API_FORMAT=ollama|openai`
@@ -320,9 +324,9 @@ Experiment artifacts (`/diagnostics/experiments/run`, `/diagnostics/ablations/ru
 - Optional local inference service:
   - `docker compose --profile local-llm up -d ollama`
 - Runtime policy:
-  - normal chat prefers Ollama and falls back to Gemini only when the configured local model is degraded or still provisioning
-  - the backend auto-pulls the configured Ollama model in the background when `LOCAL_LLM_AUTO_PULL_ENABLED=true`
-  - CSC irreducibility runs remain strict and never use Gemini fallback
+  - standard Ghost chat uses Gemini exclusively
+  - CSC irreducibility assay uses the local hooked backend and never uses Gemini fallback
+  - `LOCAL_LLM_AUTO_PULL_ENABLED` applies to the CSC research assay only
 - Runtime checks:
   - `GET /health` now includes `llm_backend`, `model`, `llm_ready`, `local_model_ready`, `llm_effective_backend`, `llm_degraded`, and `llm_degraded_reason`.
   - `GET /ghost/llm/backend` returns default/effective backend state, fallback policy, local model provisioning state, and optional health/steering telemetry. Add `?include_health=true` to probe local inference readiness and `?include_steering=true` to include hooked CSC capability.
@@ -440,11 +444,11 @@ Remove cron block:
 - Engineering reference:
   - Detailed implementation/state/event contract: `docs/MORPHEUS_MODE_DEV_GUIDE.md`
 
-## RPD-1 Reflection Layer (Advisory-First)
+## RPD-1 Reflection Layer
 
-- Mode defaults to `RPD_MODE=advisory` (non-blocking shadow decisions only).
-- New env knobs:
-  - `RPD_MODE=advisory`
+- **Current mode**: `RPD_MODE=soft` — enforcement active. Policy decisions are applied, not shadow-only. The default in `config.py` is `advisory` but the active runtime (`.env`) runs soft mode.
+- Env knobs:
+  - `RPD_MODE=soft` (current) | `advisory` (shadow-only) | `off`
   - `RPD_SHARED_CLARITY_THRESHOLD=0.62`
   - `RPD_TOPOLOGY_WARP_MIN=0.12`
   - `RPD_REFLECTION_BATCH=8`

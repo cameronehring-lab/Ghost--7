@@ -16,7 +16,7 @@ This is the long-lived reference for system direction. `docs/SYSTEM_DESIGN.md` d
 
 ## 2. North Star Statement
 
-Build a local-first autonomous cognition platform where behavior is driven by measurable, closed-loop system dynamics (sensing -> state -> action -> sensed consequence), with strict provenance, bounded self-modification, and falsifiable diagnostics.
+Build a self-hosted, data-sovereign autonomous cognition platform where behavior is driven by measurable, closed-loop system dynamics (sensing -> state -> action -> sensed consequence), with strict provenance, bounded self-modification, and falsifiable diagnostics. "Self-hosted" means all persistent state lives on operator-controlled infrastructure (Postgres, Redis, InfluxDB); the LLM generation layer is currently cloud-dependent (Gemini). The architecture is designed to support full local deployment on bare metal as a long-term goal.
 
 ## 3. Scope and Non-Claims
 
@@ -63,7 +63,7 @@ Out of scope (for now):
 4. Diagnostic integrity invariant
    - Validation endpoints return machine-readable artifacts with SQL replication snippets.
 5. Epistemic honesty invariant
-   - IIT/advisory outputs include explicit `not_consciousness_metric` semantics.
+   - IIT/RPD outputs include explicit `not_consciousness_metric` semantics regardless of governance mode.
 
 ## 6. Reference Architecture Direction
 
@@ -97,7 +97,7 @@ Layer E: Consolidation and synthesis
 
 Layer F: Governance and evidence
 
-- IIT layer starts advisory-first
+- IIT/RPD governance runs in soft enforcement mode (`IIT_MODE=soft`, `RPD_MODE=soft` as of 2026-04-10). Policy decisions are applied, not shadow-only. The M4 workstream completes the formal per-surface safety audit.
 - **Thermodynamic Governance**: System effort ($W_{int}$) and dissipation events (ADEs) act as high-level moderators for resource sequestration and identity flexibility.
 
 Layer G: Thermodynamic Agency ($W_{int}$) and Phase Transitions (ADEs)
@@ -143,7 +143,7 @@ Known gaps:
 - `scripts/ablation_suite.py` exists, but control-path comparison breadth and reporting rigor are still limited.
 - Influx-first proprio extraction can still be deepened in the gating pipeline.
 - Place/thing/idea CRUD exists at API level, but operator-facing unified world-model inspection/editing UX remains limited.
-- Soft-governor mode exists conceptually; advisory remains active control mode.
+- IIT/RPD soft enforcement is live; formal per-surface safety audit (M4) is pending.
 - Morpheus wake semantics are currently stable/static in v1 (not a rotating daily trigger family).
 
 ## 8. Roadmap (Execution Order)
@@ -166,10 +166,10 @@ Phase 3: Scientific rigor automation
 - Add ablation harness for baseline/control comparisons across key cognitive loops
 - Produce standardized experiment artifacts suitable for SQL + API cross-validation
 
-Phase 4: Governance upgrade path
+Phase 4: Governance surface hardening (in progress — M4 2026-05-26)
 
-- Preserve advisory as default
-- Add policy interfaces for soft governor without coupling to UI
+- IIT/RPD soft enforcement is already active; this phase completes the formal per-surface safety audit
+- Document and test enforcement behavior across all surfaces (generation, actuation, manifold writes, rolodex writes, entity writes)
 - Gate only high-risk actions first; expand based on evidence
 
 Phase 5: Embodiment depth

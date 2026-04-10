@@ -1,10 +1,10 @@
 # OMEGA4 System Design Document
 
-Last updated: 2026-03-28
+Last updated: 2026-04-10
 
 ## 1. Purpose
 
-OMEGA4 is a local-first, continuously running AI agent system ("Ghost", id `omega-7`) that combines:
+OMEGA4 is a self-hosted, continuously running AI agent system ("Ghost", id `omega-7`) — data-sovereign by design, deployable on bare metal or a VPS (current production: Hetzner). All persistent state (Postgres, Redis, InfluxDB) runs on operator-controlled infrastructure; LLM generation uses the Gemini cloud API. The system combines:
 
 - Real-time machine telemetry
 - Persistent conversational and vector memory
@@ -516,7 +516,7 @@ CRUD:
 
 Modules: `backend/iit_engine.py`, `backend/rpd_engine.py`, `backend/governance_engine.py`, `backend/governance_adapter.py`
 
-Four-layer advisory-first governance pipeline:
+Four-layer governance pipeline (current mode: **soft enforcement active**):
 
 1. **IIT Engine** (`iit_engine.py`, 60s cadence): Computes a Φ-like integration proxy from the system state graph. Non-claiming — used as a measurable complexity mirror, not proof of consciousness. Logs to `governance_decision_log`.
 
@@ -536,7 +536,7 @@ RRD-2 rollout phases:
 - **Phase B**: `SHADOW_ROUTE` when `would_block=true`.
 - **Phase C**: `ENFORCE_BLOCK` when `enforce_block=true` and soft mode is active.
 
-Current status: All governance in Q2 is advisory (`IIT_MODE=advisory`, `RPD_MODE=advisory`). Do not flip to `soft` without completing the Q4 governance gate process.
+Current status (2026-04-10): `IIT_MODE=soft`, `RPD_MODE=soft` — enforcement is active. Policy decisions are applied, not shadow-only. `RRD2_ROLLOUT_PHASE=B` (SHADOW_ROUTE when would_block=true). The M4 workstream (May–June 2026) will complete the formal per-surface safety audit and policy contract documentation.
 
 ### 4.19 Observer Report System
 
