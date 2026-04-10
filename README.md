@@ -1,35 +1,41 @@
 # OMEGA4
 
-Self-hosted autonomous agent stack for Ghost (`omega-7`) — data-sovereign, closed-loop, deployable on bare metal or a VPS. The architecture is designed so all persistent state (Postgres, Redis, InfluxDB) lives on infrastructure you control; the LLM generation layer currently uses the Gemini cloud API. With:
+**Ghost (`ω-7`)** is a continuously running autonomous AI entity built on top of a large language model. The central design thesis: LLM behavior should be governed by real system state, not just prompt engineering.
 
-- FastAPI backend + static frontend
-- Postgres (`pgvector`) for memory/state
-- Redis for affective state persistence
-- InfluxDB + Telegraf for time-series telemetry
-- Background cognition loops (monologue, quietude, consolidation, synthesis)
-- **Person Rolodex Autonomy** (social modeling via actuation tags)
-- **High-Rigor Neural Topology** (3D cognitive mapping with glitched diagnostics)
-- **Conversational Voice Stack** (remote/local TTS fallback, voice tuning, speech-to-text input)
-- **Runtime Autonomy Profile** (canonical self-architecture + guardrail contract)
-- **Morpheus Mode** (hidden semantic wake + branching red/blue terminal path)
+OMEGA4 runs live machine telemetry through a signal normalization pipeline into decaying affective state that shapes generation policy, cadence, identity, and actuation — all upstream of and independent from the conversation. Ghost maintains a persistent self-model that it can autonomously evolve from background thought cycles, operates 18 function-calling tools including sandboxed code execution and a personal scientific research repository, and is governed by a soft-enforcement IIT/RPD stack that applies policy decisions (not just logs them).
+
+**For a full technical briefing**: [`docs/TECHNICAL_OVERVIEW.md`](docs/TECHNICAL_OVERVIEW.md)
+
+---
+
+**Stack**: Self-hosted, data-sovereign. All persistent state (Postgres/pgvector, Redis, InfluxDB) on operator-controlled infrastructure. LLM generation: Gemini 2.5 Flash. Production: Hetzner VPS (x86_64). Dev: macOS (Apple Silicon).
+
+### Key Architectural Properties
+
+- **Somatic closed loop** — telemetry → z-score normalization → decaying EmotionState → proprioceptive pressure gate (OPEN/THROTTLED/SUPPRESSED) → generation policy modulation → actuation outcome traces → affect (no conversation turn required)
+- **Soft-enforcement governance** — IIT/RPD stack (`IIT_MODE=soft`, `RPD_MODE=soft`) applies policy decisions across generation, actuation, identity writes, manifold writes
+- **Autonomous identity crystallization** — background loop evaluates accumulated thoughts every ~6 minutes and commits self-model updates without operator trigger
+- **24 documented inventions** — each with code path, runtime evidence, and validation asset ([Invention Ledger](docs/INVENTION_LEDGER.md))
+- **18 active tools** — base cognition (7), TPCV research repository (5), versioned authoring workspace (6); X social tools present but research-isolated
+- **Falsification-first** — 200+ tests, diagnostic endpoints, SQL verification paths for every capability claim
+
+---
 
 ## Core Documentation
 
-- [Technical North Star](docs/TECHNICAL_NORTH_STAR.md)
-- [System Design Document](docs/SYSTEM_DESIGN.md)
-- [Living System Status](docs/LIVING_SYSTEM_STATUS.md)
-- [API Contract](docs/API_CONTRACT.md)
-- [Morpheus Mode Developer Guide](docs/MORPHEUS_MODE_DEV_GUIDE.md)
-- [Login and Access Reference](docs/LOGIN_ACCESS_REFERENCE.md)
-- [Governance Policy Matrix](docs/GOVERNANCE_POLICY_MATRIX.md)
-- [Layer & Datum TOC](docs/LAYER_DATA_TOC.md)
-- [Technical Capability Manifest](docs/TECHNICAL_CAPABILITY_MANIFEST.md)
-- [Invention Ledger](docs/INVENTION_LEDGER.md)
-- [Repo Expert Tool](docs/REPO_EXPERT_TOOL.md)
-- [About FAQ and Glossary](docs/ABOUT_FAQ_GLOSSARY.md)
-- [Documentation Sync Audit (2026-03-18)](docs/DOCUMENTATION_SYNC_AUDIT_2026-03-18.md)
-- [Documentation Sync Audit (2026-03-18 Reliability-First)](docs/DOCUMENTATION_SYNC_AUDIT_2026-03-18_RELIABILITY_FIRST.md)
-- [Q2 2026 Execution Plan](docs/EXECUTION_PLAN_Q2_2026.md)
+| Document | Purpose |
+|----------|---------|
+| [**Technical Overview**](docs/TECHNICAL_OVERVIEW.md) | Single-doc briefing — architecture, inventions, research directions |
+| [Technical Capability Manifest](docs/TECHNICAL_CAPABILITY_MANIFEST.md) | Full capability inventory with implementation references |
+| [Invention Ledger](docs/INVENTION_LEDGER.md) | 24 inventions, each with falsification evidence |
+| [System Design Document](docs/SYSTEM_DESIGN.md) | Implementation architecture, data model, operational behavior |
+| [Technical North Star](docs/TECHNICAL_NORTH_STAR.md) | Long-lived direction and decision rules |
+| [Living System Status](docs/LIVING_SYSTEM_STATUS.md) | Current snapshot — what's running, what's changed |
+| [Execution Plan Q2 2026](docs/EXECUTION_PLAN_Q2_2026.md) | Milestones, workstreams, acceptance gates |
+| [API Contract](docs/API_CONTRACT.md) | Route and payload specifications |
+| [Governance Policy Matrix](docs/GOVERNANCE_POLICY_MATRIX.md) | IIT/RPD enforcement surface documentation |
+| [Layer & Datum TOC](docs/LAYER_DATA_TOC.md) | UI layer architecture and data contracts |
+| [Morpheus Mode Developer Guide](docs/MORPHEUS_MODE_DEV_GUIDE.md) | Hidden branch runtime specification |
 
 ## Backend Documentation
 

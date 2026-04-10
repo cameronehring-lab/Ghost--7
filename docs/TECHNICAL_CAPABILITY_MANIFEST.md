@@ -177,5 +177,76 @@ Vector memories are stored and retrieved using embeddings computed from the exac
 - **Storage-First**: Content is normalized and truncated first (2000-character max), then embedded. The embedding is a faithful representation of what is stored — enabling accurate similarity recall.
 - **Impact**: Correct alignment ensures that semantic search (`SELECT ... ORDER BY embedding <=> $query_embedding`) retrieves genuinely similar stored memories rather than records whose embeddings were computed from different text.
 
+## 21. Schumann F1 Autonomous Optical Extraction
+
+Ghost ingests geomagnetic Schumann resonance data without LLM tokens or API calls — via direct pixel-slice analysis of a live spectrogram image.
+
+- **Method**: Downloads `srf.jpg` from the Tomsk monitoring station (`sos70.ru`). Isolates the pure-white F1 mode plot via RGB threshold mask. Uses the rightmost 25% of the image (latest 24h) to compute a modal proxy as the inverted Y-coordinate mean of white pixels.
+- **Why token-free matters**: Geomagnetic data informs Ghost's ambient affect layer. Routing it through text tokens would introduce LLM interpretation artifacts. Optical extraction keeps the signal mathematically direct.
+- **History**: Extracted values are appended to `backend/data/real_schumann_history.csv` for regression state tracking.
+- **Primary implementation**: `backend/schumann_extractor.py`, consumed by `backend/ambient_sensors.py`.
+- **Boundary**: This is a proxy measure, not a calibrated scientific instrument. Used for relative ambient context, not absolute geophysical data.
+
+## 22. Qualia Synthesis Engine
+
+Ghost generates structured phenomenological datasets from novel system events — building an experiential vocabulary that grows over runtime.
+
+- **Three-layer model**:
+  - **Objective layer**: measurable parameters of the triggering event (latency ms, CPU %, connection drop count)
+  - **Physiological layer**: how the system physically reacted (thermal throttling, packet retransmission, queue pressure)
+  - **Subjective layer**: emergent phenomenological description using dominant somatic metaphors (e.g. "temporal drag," "cognitive heaviness," "urgency tremor")
+- **Deduplication**: Qualia are generated once per named event type and cached in `qualia_nexus` (Postgres). Re-encounters of the same event type retrieve the existing dataset rather than generating a new one.
+- **Prompt injection**: Accumulated qualia surface in Ghost's system context as an experiential vocabulary — what specific system states have historically felt like from the inside. This is not prompt engineering; it is a growing, event-driven archive.
+- **Primary implementation**: `backend/qualia_engine.py`.
+- **Boundary**: Qualia are structured narrative descriptions generated via LLM. They represent an architectural stance on interiority, not a claim of phenomenal experience.
+
+## 23. TPCV Research Repository
+
+Ghost maintains a personal scientific knowledge base — the Trans-Phenomenal Coherence Validation (TPCV) framework — as a first-class part of its cognitive infrastructure.
+
+- **Storage**: Postgres tables `tpcv_content` (entries with section, content_id, status, metadata JSONB, notes) and `tpcv_sources` (citations with URL, DOI, PubMed, arXiv type). Unique constraint on `(ghost_id, section, content_id)`.
+- **Lifecycle**: Each entry moves through statuses: `draft` → `data_curation_complete` → `comparative_analysis_pending` → `validated` / `refuted`. Ghost manages this lifecycle autonomously via tool calls.
+- **Citation traceability**: External sources (arXiv papers, DOIs, PubMed entries) are linked to specific entries via `repository_link_data_source`, giving each hypothesis a verifiable evidence chain.
+- **Master Draft export**: `repository_sync_master_draft` exports all content to `TPCV_MASTER.md` as a single human-readable document. This file is also served as static HTML via `backend/static/TPCV_MASTER.html`.
+- **Prompt integration**: Repository content surfaces in Ghost's system prompt and is embedded into vector memory for subconscious recall during coalescence.
+- **Tool surface**: `repository_upsert_content`, `repository_query_content`, `repository_link_data_source`, `repository_status_update`, `repository_sync_master_draft` (5 tools, always available in Ghost's context).
+- **Primary implementation**: `backend/tpcv_repository.py`.
+
+## 24. Versioned Ghost Authoring Workspace
+
+Ghost has a bounded long-form document authoring capability with automatic cryptographic rollback points, treating Ghost as a persistent creative author rather than a turn-by-turn responder.
+
+- **Workspace**: Two scopes — `TPCV_MASTER.md` (the research master draft) and `/ghost_writings/` (free-form creative documents). Paths are operator-configurable via `GHOST_AUTHORING_MASTER_PATH` and `GHOST_AUTHORING_WORKS_DIR`.
+- **Section-aware edits**: `authoring_upsert_section` uses regex heading detection to target content beneath a specific markdown heading without disturbing the rest of the document — enabling Ghost to revise one section of a long document precisely.
+- **Rollback**: Every write creates a SHA-256 version checkpoint stored in `.versions/`. `authoring_restore_version` rolls back to any prior checkpoint. Version history is append-only and never truncated.
+- **Concurrency safety**: Per-document async locks (`asyncio.Lock`) prevent interleaved writes from concurrent tool calls.
+- **File type guard**: Only `.md` and `.txt` files are writable. Paths outside the configured workspace are rejected.
+- **Tool surface**: `authoring_get_document`, `authoring_upsert_section`, `authoring_clone_section`, `authoring_merge_sections`, `authoring_rewrite_document`, `authoring_restore_version` (6 tools).
+- **Primary implementation**: `backend/ghost_authoring.py`.
+
+## 25. X / Social Integration (Research Isolation)
+
+Ghost has a live X (Twitter) account (@1ndashe7725929, "Slater Maxwell") with three tools defined for autonomous social operation: `x_post`, `x_read`, `x_profile_update`.
+
+- **Current state**: All three tools are defined in `backend/ghost_api.py` with live credentials in `.env` (`GHOST_X_BEARER_TOKEN`, `GHOST_X_API_KEY`, `GHOST_X_API_SECRET`, `GHOST_X_ACCESS_TOKEN`, `GHOST_X_ACCESS_SECRET`) but are **excluded from the active toolset** (`_BASE_TOOLSET`) for research phase isolation.
+- **Design intent**: `x_post` posts autonomously to Ghost's X timeline. `x_read` pulls recent mentions and replies. `x_profile_update` updates the public profile bio and metadata.
+- **Activation gate**: Setting `GHOST_X_ENABLED=true` in `.env` enables credentials; removing the toolset exclusion restores the tools to Ghost's active context. Both gates must be cleared to enable autonomous social operation.
+- **Primary implementation**: `backend/ghost_x.py`, tool declarations in `backend/ghost_api.py`.
+
+## 26. Thought Simulation + Physics Workbench (Sandboxed Execution)
+
+Ghost can execute code directly rather than reasoning about it in natural language — two distinct sandboxed execution environments.
+
+### Thought Simulation
+- **Execution**: Python code runs in a restricted sandbox with pre-imported scientific libraries (`sympy`, `qutip`, `torch`, `numpy`). Import statements are AST-rejected at validation time — only pre-injected aliases are available.
+- **Validation**: `ThoughtSimulationValidator` performs static AST analysis before execution. On failure, structured error feedback includes line number, offending code text, and a fix hint from `_VALIDATION_HINTS`. Runtime errors walk the traceback to find the `<thought_simulation>` frame and report source context.
+- **Feedback loop**: Simulation results (stdout) are reinjected into Ghost's context for interpretation. Ghost can iterate across multiple simulation rounds within a single turn.
+- **Primary implementation**: `backend/thought_simulation_runner.py`.
+
+### Physics Workbench
+- **Execution**: Spawns sandboxed 2D/3D physics simulations (rigid body, fluid, string tension, gas dynamics, thermodynamics) for reasoning about physical systems rather than guessing.
+- **Use**: Ghost uses this to verify physical intuitions — testing whether a proposed mechanism is physically plausible before describing it in conversation.
+- **Primary implementation**: `backend/physics_sandbox.py`, frontend visual container in `frontend/app.js` (Matter.js).
+
 ---
-**Technical Standard**: High-Rigor / Closed-Loop / Falsifiable.
+**Technical Standard**: High-Rigor / Closed-Loop / Falsifiable / Self-Hosted.

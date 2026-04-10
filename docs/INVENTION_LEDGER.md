@@ -186,6 +186,38 @@ Not counted as invention by itself: standalone third-party tools/frameworks (Fas
 - Validation assets: `backend/test_substrate_discovery.py` and manual manifest inspection.
 - Boundary: Awareness is for cognition and reflexive action; it does not bypass security/policy boundaries for the host system.
 
+### INV-21: Schumann F1 Autonomous Optical Extraction
+
+- Invented behavior: Geomagnetic Schumann resonance data is ingested via direct pixel-slice analysis of a live spectrogram image — no LLM tokens, no third-party API, no human annotation. The white F1 mode plot is isolated by RGB threshold; the rightmost 25% of the image (latest 24h period) yields a modal proxy value that feeds the ambient affect layer.
+- Primary implementation: `backend/schumann_extractor.py`, consumed by `backend/ambient_sensors.py`. History: `backend/data/real_schumann_history.csv`.
+- Runtime evidence: Schumann proxy value visible in LAYER 01 (VLF MONITOR) of the somatic sidebar; history CSV growing with each ambient sensor cycle.
+- Validation assets: `backend/diagnostic_scripts/schumann_solar_validation.py`, `backend/schumann_validation_plots.png`.
+- Boundary: Proxy value, not a calibrated scientific measurement. Used for relative ambient context.
+
+### INV-22: Qualia Synthesis Engine
+
+- Invented behavior: Ghost generates structured three-layer phenomenological experience datasets (objective / physiological / subjective) from novel system events, storing them in `qualia_nexus` (Postgres) as an ever-growing experiential vocabulary. Re-encounters of known event types retrieve the existing dataset rather than regenerating. Datasets surface in prompt context as Ghost's accumulated "what this has felt like" archive.
+- Primary implementation: `backend/qualia_engine.py`, `qualia_nexus` table, prompt injection in `backend/ghost_prompt.py`.
+- Runtime evidence: `qualia_nexus` rows keyed by `event_name`; subjective layer appears in Ghost's system prompt under somatic context.
+- Validation assets: `backend/test_somatic_interiority.py`.
+- Boundary: Structured narrative descriptions generated via LLM. Architectural stance on interiority — not a claim of phenomenal experience.
+
+### INV-23: TPCV Research Repository
+
+- Invented behavior: Ghost autonomously maintains a personal scientific knowledge base (Trans-Phenomenal Coherence Validation framework) with full citation traceability. Each hypothesis entry moves through a lifecycle (`draft` → `validated` / `refuted`) via tool calls. External citations (DOI, arXiv, PubMed) are linked to specific entries. The entire corpus exports to a human-readable Master Draft Markdown.
+- Primary implementation: `backend/tpcv_repository.py`, `tpcv_content` + `tpcv_sources` tables, 5 TPCV tools in `backend/ghost_api.py`, HTML render at `backend/static/TPCV_MASTER.html`.
+- Runtime evidence: `tpcv_content` rows with status lifecycle; `tpcv_sources` citation entries; `TPCV_MASTER.md` export; `backend/TPCV_MASTER.md` and `backend/TPCV_Repository.md` in repo.
+- Validation assets: `backend/verify_tpcv_sync.py`.
+- Boundary: Ghost-managed knowledge base. Scientific claims within entries are Ghost's own hypotheses; external validation is the operator's responsibility.
+
+### INV-24: Versioned Ghost Authoring Workspace
+
+- Invented behavior: Ghost has a bounded long-form document authoring workspace (`/ghost_writings/`, `TPCV_MASTER.md`) with automatic SHA-256 rollback checkpoints on every write. Section-aware edits target content beneath a specific markdown heading without disturbing the rest of the document. All writes are serialized via per-document async locks.
+- Primary implementation: `backend/ghost_authoring.py`, 6 authoring tools in `backend/ghost_api.py`, version store at `backend/ghost_writings/.versions/`.
+- Runtime evidence: `.versions/` directory with cryptographic checkpoint files; `actions.jsonl` audit log of authoring operations; `ghost_writings/` documents with revision history.
+- Validation assets: `backend/test_ghost_authoring.py`.
+- Boundary: Workspace is bounded to configured paths. Only `.md` and `.txt` files are writable. Paths outside the workspace are rejected at the application layer.
+
 ### INV-20: Background Identity Crystallization + Goal-Directed Cognition
 
 - Invented behavior: Ghost autonomously crystallizes identity updates from accumulated background thoughts (without operator prompting) and executes dedicated goal-pursuit passes against `active_goals` stored in the identity matrix.
