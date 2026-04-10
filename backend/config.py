@@ -150,8 +150,8 @@ class Settings(BaseSettings):
 
     # Security / Access Control
     OPERATOR_API_TOKEN: str = ""
-    CONTROL_TRUSTED_CIDRS: str = "127.0.0.1/32,::1/128,172.17.0.0/16,192.168.65.0/24"
-    DIAGNOSTICS_TRUSTED_CIDRS: str = "127.0.0.1/32,::1/128,172.17.0.0/16,192.168.65.0/24"
+    CONTROL_TRUSTED_CIDRS: str = "127.0.0.1/32,::1/128,172.17.0.0/16,172.18.0.0/16,192.168.65.0/24"
+    DIAGNOSTICS_TRUSTED_CIDRS: str = "127.0.0.1/32,::1/128,172.17.0.0/16,172.18.0.0/16,192.168.65.0/24"
     CORS_ALLOW_ORIGINS: str = "http://localhost:8000,http://127.0.0.1:8000"
     CORS_ALLOW_CREDENTIALS: bool = True
     SHARE_MODE_ENABLED: bool = False

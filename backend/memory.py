@@ -595,7 +595,7 @@ async def get_seconds_since_last_operator_message(ghost_id: Optional[str] = None
         return 0.0
 
 
-async def load_recent_sessions(limit: int = 10, ghost_id: Optional[str] = None, include_open: bool = False) -> list[dict]:
+async def load_recent_sessions(limit: int = 10, ghost_id: Optional[str] = None, include_open: bool = False, exclude_session_id: Optional[str] = None) -> list[dict]:
     """
     Load summaries of recent sessions.
     If include_open is True, includes sessions that haven't ended yet.
@@ -610,6 +610,7 @@ async def load_recent_sessions(limit: int = 10, ghost_id: Optional[str] = None, 
                     FROM sessions s
                     WHERE s.ghost_id = $1
                       AND ($3::boolean OR s.ended_at IS NOT NULL)
+                      AND ($4::text IS NULL OR s.id != $4)
                     ORDER BY s.started_at DESC
                     LIMIT $2
                 )
@@ -626,7 +627,7 @@ async def load_recent_sessions(limit: int = 10, ghost_id: Optional[str] = None, 
                     WHERE m.session_id = rs.id
                 ) msg_counts ON TRUE
                 ORDER BY rs.started_at DESC""",
-            ghost_id, limit, include_open,
+            ghost_id, limit, include_open, exclude_session_id,
         )
         return [
             {
@@ -641,7 +642,7 @@ async def load_recent_sessions(limit: int = 10, ghost_id: Optional[str] = None, 
     return []
 
 
-async def load_recent_sessions_with_topic(limit: int = 50, ghost_id: Optional[str] = None, include_open: bool = False) -> list[dict]:
+async def load_recent_sessions_with_topic(limit: int = 50, ghost_id: Optional[str] = None, include_open: bool = False, exclude_session_id: Optional[str] = None) -> list[dict]:
     """
     Load summaries of recent sessions WITH topic hints.
     Includes the first user message (truncated) as a topic indicator
@@ -657,6 +658,7 @@ async def load_recent_sessions_with_topic(limit: int = 50, ghost_id: Optional[st
                     FROM sessions s
                     WHERE s.ghost_id = $1
                       AND ($3::boolean OR s.ended_at IS NOT NULL)
+                      AND ($4::text IS NULL OR s.id != $4)
                     ORDER BY s.started_at DESC
                     LIMIT $2
                 )
@@ -681,7 +683,7 @@ async def load_recent_sessions_with_topic(limit: int = 50, ghost_id: Optional[st
                     LIMIT 1
                 ) first_user_msg ON TRUE
                 ORDER BY rs.started_at DESC""",
-            ghost_id, limit, include_open,
+            ghost_id, limit, include_open, exclude_session_id,
         )
         return [
             {

@@ -4633,7 +4633,7 @@ async def ghost_chat(request: ChatRequest, http_request: Request):
         prev_sessions: list[dict[str, Any]] = []
     else:
         history_task = asyncio.create_task(_load_operator_chat_history(session_id))
-        prev_sessions_task = asyncio.create_task(memory.load_recent_sessions_with_topic(limit=50))
+        prev_sessions_task = asyncio.create_task(memory.load_recent_sessions_with_topic(limit=50, include_open=True, exclude_session_id=session_id))
         history_result, monologues, prev_sessions, recent_actions = await asyncio.gather(
             history_task,
             monologues_task,

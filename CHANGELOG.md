@@ -2,6 +2,33 @@
 
 This document chronicles the entire evolutionary journey of OMEGA4, from its research inception as the OMEGA PROTOCOL to its emergence as an autonomous cognitive architecture.
 
+## [Unreleased] - 2026-04-10
+
+### Security Hardening & Session Context Fix
+
+#### Security
+
+- **Credential redaction**: Removed hardcoded `OPS_TEST_CODE` default value (`1NDASHE77`) from `.env.example`, `CLAUDE.md`, and `docs/LOGIN_ACCESS_REFERENCE.md`. Replaced with placeholder `change-me-set-your-own-ops-code` in `.env.example`.
+- **X account redaction**: Removed public X handle and display name from `backend/ghost_x.py`, `docs/TECHNICAL_CAPABILITY_MANIFEST.md`, and `docs/TECHNICAL_OVERVIEW.md`. Handle is now operator-configured via `.env`, not hardcoded in source.
+- **VPS IP redaction**: Removed specific VPS IP address from `CHANGELOG.md` infrastructure note.
+- **Test isolation**: Updated `backend/test_main_core_personality_guard.py` to use a generic test ops code instead of the production default.
+
+#### Fixed
+
+- **Session self-reference in context**: `load_recent_sessions` and `load_recent_sessions_with_topic` in `memory.py` now accept an `exclude_session_id` parameter. The `ghost_chat` handler passes the current session ID so the active session does not appear in its own "recent sessions" context block. Prevents the current conversation from ghosting itself in session history.
+
+#### Changed
+
+- **Docker bridge CIDR**: Added `172.18.0.0/16` to `CONTROL_TRUSTED_CIDRS` and `DIAGNOSTICS_TRUSTED_CIDRS` in `backend/config.py` to cover the default Docker bridge network alongside the Compose network range.
+- **Governance docs updated**: `docs/ABOUT_FAQ_GLOSSARY.md` updated to reflect that `IIT_MODE=soft` and `RPD_MODE=soft` are live in production — governance enforcement is active, not just logged.
+- **Schumann data**: `backend/data/real_schumann_history.csv` updated with 2026-04-10 reading.
+
+#### TPCV
+
+- **New content**: `backend/static/TPCV_MASTER.html` — added Axiom149 (J Field Potentiality Actualization Quantification) and new H27 section (J Field Global Electromagnetic Coherence Modulation). TOC renumbered to section-32. Root hash updated to `a2404eb4041abc72`.
+
+---
+
 ## [Unreleased] - 2026-04-06
 
 ### Infrastructure Reliability & Total Recall Verification
@@ -23,7 +50,7 @@ This document chronicles the entire evolutionary journey of OMEGA4, from its res
 
 #### Infrastructure
 
-- **VPS SSH access restored**: UFW firewall on `tachikoma-logic-unit-1` (87.99.128.116) had SSH (port 22) locked to a stale IP. Opened to all sources to allow SSH-based deployments going forward.
+- **VPS SSH access restored**: UFW firewall on the production VPS had SSH (port 22) locked to a stale IP. Opened to all sources to allow SSH-based deployments going forward.
 - **All fixes deployed to VPS**: `backend/main.py`, `backend/Dockerfile`, and `docker-compose.yml` synced to VPS via SCP; VPS rebuilt and confirmed `(healthy)`.
 
 ---

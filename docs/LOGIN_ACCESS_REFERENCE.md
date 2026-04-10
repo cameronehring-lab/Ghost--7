@@ -11,7 +11,7 @@ Use it as the single place to check what login/access values exist, where they a
 |---|---|---|---|---|---|
 | Boot overlay UI gate | Boot code | `OMEGA` (hardcoded) | [`frontend/app.js`](../frontend/app.js) (`bindBootLoginEvents`) | Local UI input only | UI-only gate. Not backend security. |
 | Share mode (whole app) | `SHARE_MODE_USERNAME`, `SHARE_MODE_PASSWORD` | Username default `omega`; password must be set | `.env` / `.env.example` | HTTP Basic Auth (`Authorization: Basic ...`) | Applies to UI + API + SSE when `SHARE_MODE_ENABLED=true`; exempt paths via `SHARE_MODE_EXEMPT_PATHS` (default `/health`). |
-| Hidden ops panel + ops routes | `OPS_TEST_CODE` | `1NDASHE77` default in config/example | `.env` / `.env.example` / `backend/config.py` | `X-Ops-Code` header (preferred); `Authorization: Bearer ...`; `?code=` query fallback | Required for `/ops/*` endpoints, `/ghost/chat` messages starting with `/ops/`, core-personality modification approval in chat, and explicit authorization for high-risk model actuations. |
+| Hidden ops panel + ops routes | `OPS_TEST_CODE` | _(set in `.env`)_ | `.env` / `backend/config.py` | `X-Ops-Code` header (preferred); `Authorization: Bearer ...`; `?code=` query fallback | Required for `/ops/*` endpoints, `/ghost/chat` messages starting with `/ops/`, core-personality modification approval in chat, and explicit authorization for high-risk model actuations. |
 | Operator control auth | `OPERATOR_API_TOKEN` | Empty by default (disabled unless set) | `.env` / `backend/config.py` | `X-Operator-Token` header or `Authorization: Bearer ...` | Governs `_require_operator_access` routes. If unset, trusted-local-source fallback is used. |
 
 ## 2. Backend Route Auth Classes (Login-Relevant)

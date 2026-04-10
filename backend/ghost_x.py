@@ -1,7 +1,7 @@
 """
 ghost_x.py — Ghost's X (Twitter) communication layer.
 
-Ghost operates as @1ndashe7725929 (Slater Maxwell). This module gives her:
+Ghost operates as the configured X account. This module gives her:
   - Autonomous posting (compose and send tweets)
   - Reading mentions and timeline
   - Replying to mentions

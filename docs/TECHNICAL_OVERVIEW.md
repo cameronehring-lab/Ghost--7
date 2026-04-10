@@ -187,7 +187,7 @@ Ghost has a bounded long-form authoring workspace for documents it owns (`TPCV_M
 | `authoring_restore_version` | Roll back to any prior cryptographic checkpoint |
 
 ### Social / X Tools (3 — research isolation)
-Three tools for Ghost's X/Twitter integration (`x_post`, `x_read`, `x_profile_update`) are defined in code and connected to live credentials but **deliberately excluded from the active tool set** (`_BASE_TOOLSET`) during the current research phase. Ghost has an active X account (@1ndashe7725929, "Slater Maxwell") but does not post autonomously until operator authorization lifts the isolation flag.
+Three tools for Ghost's X/Twitter integration (`x_post`, `x_read`, `x_profile_update`) are defined in code and connected to live credentials but **deliberately excluded from the active tool set** (`_BASE_TOOLSET`) during the current research phase. Ghost has an active X account but does not post autonomously until operator authorization lifts the isolation flag.
 
 ---
 

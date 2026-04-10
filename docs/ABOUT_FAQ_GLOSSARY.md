@@ -1,13 +1,13 @@
 # OMEGA4 About FAQ and Glossary
 
-Last updated: 2026-03-28
+Last updated: 2026-04-10
 
 This document is the canonical source for tester-visible About FAQ and glossary content.
 
 ## FAQ
 
 ### Q: What is OMEGA4 in practical terms?
-### A: OMEGA4 is a local-first FastAPI + static-frontend system that simulates an embodied autonomous agent. It maps telemetry into affective state, records behavior, and exposes auditable cognitive/runtime surfaces through APIs and UI panels.
+### A: OMEGA4 is a self-hosted, data-sovereign FastAPI + static-frontend system that runs a persistent autonomous AI entity (Ghost, ω-7). It maps live machine telemetry into decaying affective state that shapes generation policy, records behavior, and exposes auditable cognitive/runtime surfaces through APIs and UI panels. All persistent state (Postgres, Redis, InfluxDB) runs on operator-controlled infrastructure.
 
 ### Q: Is Ghost claiming biological consciousness?
 ### A: No. Ghost is an engineered system with measurable runtime dynamics. The platform is designed around explicit non-claims and falsifiable diagnostics, not metaphysical claims.
@@ -67,7 +67,7 @@ A: Ghost has "Perfect Recall" for the immediate context. It tracks the **last 40
 ### A: Ghost emits structured `[ROLODEX:set_profile:name:...]` and `[ROLODEX:set_fact:name:type:value]` tags during generation whenever it learns something about a person. These tags are parsed after each response and upsert records into `person_rolodex` and `person_memory_facts`. Session bindings (`rolodex_session_bindings`) are created after each turn so Ghost knows which conversations involved which people. The retroactive audit/sync scripts can backfill Rolodex entries from historical memory if facts were mentioned before the Rolodex existed.
 
 ### Q: What governance mechanisms protect against unsafe behavior?
-### A: Three layers work in sequence. The **IIT Engine** computes an integration complexity proxy as an advisory signal. The **RPD Engine** evaluates candidate mutations under structured reflection criteria. The **GovernanceEngine** synthesizes a policy decision (`off`/`advisory`/`soft`). The **GovernanceAdapter** applies that policy to specific surfaces (generation, actuation, messaging, identity corrections, manifold writes, rolodex writes, entity writes) and routes requests as `ALLOW`, `SHADOW_ROUTE`, or `ENFORCE_BLOCK`. A `freeze_until` timestamp in an active governance policy can lock all surfaces until the window expires. Currently all governance runs in `advisory` mode — decisions are logged but not enforced.
+### A: Three layers work in sequence. The **IIT Engine** computes an integration complexity proxy as an advisory signal. The **RPD Engine** evaluates candidate mutations under structured reflection criteria. The **GovernanceEngine** synthesizes a policy decision (`off`/`advisory`/`soft`). The **GovernanceAdapter** applies that policy to specific surfaces (generation, actuation, messaging, identity corrections, manifold writes, rolodex writes, entity writes) and routes requests as `ALLOW`, `SHADOW_ROUTE`, or `ENFORCE_BLOCK`. A `freeze_until` timestamp in an active governance policy can lock all surfaces until the window expires. Production runs `IIT_MODE=soft`, `RPD_MODE=soft` — enforcement is active, not just logged.
 
 ### Q: What are the IIT and RPD engines?
 ### A: **IIT** (Integrated Information Theory) is used as a complexity/integration proxy. The IIT Engine (`iit_engine.py`) periodically computes a Φ-like metric from the system's state graph and logs it. This is explicitly non-claiming — it is a measurable proxy, not proof of consciousness. **RPD** (Reflection Pathway Decision) is a layer that evaluates proposed identity mutations and topology changes against bounded criteria before forwarding them to governance. **RRD-2** extends RPD with topological resonance analysis and rollout-phase gating (phases A, B, C), where phase C enables enforce-block behavior for high-risk mutations.
@@ -135,13 +135,13 @@ The routing layer (`governance_adapter.py`) that maps a governance policy to per
 A time-bounded lockout applied to all governance surfaces when a `freeze_until` timestamp is present in an active governance policy. While frozen, write surfaces are blocked (in soft mode) or shadow-routed (in advisory mode) regardless of the normal gate logic.
 
 ### Governance Tier
-Current policy strictness level: `off` (no governance), `advisory` (decisions logged, not enforced), or `soft` (enforcement active). Controlled by `IIT_MODE` setting.
+Current policy strictness level: `off` (no governance), `advisory` (decisions logged, not enforced), or `soft` (enforcement active). Controlled by `IIT_MODE` and `RPD_MODE` settings. Production default: both set to `soft` — enforcement is active.
 
 ### Identity Matrix
 Persistent key/value belief system defining Ghost's core directives and self-concept. Protected by DB-level guards; mutations require governance approval above a risk threshold.
 
 ### IIT Advisory
-Non-claiming complexity/integration proxy used as a runtime mirror, not proof of consciousness.
+Non-claiming complexity/integration proxy. In `advisory` mode: used as a runtime mirror only. In `soft` mode (production default): policy decisions are applied across governance surfaces, not just logged.
 
 ### IIT Engine
 The `iit_engine.py` module that periodically computes a Φ-like integration metric from the system's state graph. Results feed into governance policy decisions in advisory mode. Explicitly does not claim biological consciousness — it is a measurable proxy for information-integration complexity.

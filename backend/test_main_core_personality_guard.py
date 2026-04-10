@@ -14,7 +14,7 @@ class CorePersonalityGuardTests(unittest.TestCase):
     def setUp(self):
         self._old_ops_code = main.settings.OPS_TEST_CODE
         self._old_operator_token = main.settings.OPERATOR_API_TOKEN
-        main.settings.OPS_TEST_CODE = "1NDASHE77"
+        main.settings.OPS_TEST_CODE = "test-ops-code-1234"
         main.settings.OPERATOR_API_TOKEN = ""
         main.sys_state.core_personality_guard_pending = {}
 
@@ -40,7 +40,7 @@ class CorePersonalityGuardTests(unittest.TestCase):
         self.assertEqual(first.get("action"), "request_code")
 
         second = main._evaluate_core_personality_gate(
-            "code: 1NDASHE77",
+            "code: test-ops-code-1234",
             channel=main.CHANNEL_OPERATOR_UI,
             session_id="sess-guard-1",
         )
@@ -71,7 +71,7 @@ class CorePersonalityGuardTests(unittest.TestCase):
         req_bad = _DummyRequest(headers={"x-ops-code": "bad"})
         self.assertFalse(main._has_explicit_model_actuation_auth(req_bad))
 
-        req_ok = _DummyRequest(headers={"x-ops-code": "1NDASHE77"})
+        req_ok = _DummyRequest(headers={"x-ops-code": "test-ops-code-1234"})
         self.assertTrue(main._has_explicit_model_actuation_auth(req_ok))
 
 

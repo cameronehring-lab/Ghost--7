@@ -162,7 +162,7 @@ GovernanceAdapter (governance_adapter.py)  →  route_for_surface() → DIRECT/S
 ### Access Control
 
 - **Share mode**: HTTP Basic Auth middleware (configured via `SHARE_MODE_ENABLED`, `SHARE_MODE_USERNAME`, `SHARE_MODE_PASSWORD`). Exempt paths in `SHARE_MODE_EXEMPT_PATHS`. When testing authenticated endpoints, use `-H "Authorization: Basic $(echo -n 'user:pass' | base64)"`.
-- **Ops panel**: Unlocked with `OPS_TEST_CODE` (default `1NDASHE77`). All `/ops/...` chat commands require this code server-side.
+- **Ops panel**: Unlocked with `OPS_TEST_CODE` (set in `.env`). All `/ops/...` chat commands require this code server-side.
 - **Control routes** (`/ghost/actuate`, `/config/tempo`): require `OPERATOR_API_TOKEN` or trusted CIDR. Loopback IPs are trusted without token.
 - **Diagnostics** (`/diagnostics/*`): trusted CIDR only (local-only by design). `falsification_report.py` auto-falls back to `docker exec` when it gets 403.
 

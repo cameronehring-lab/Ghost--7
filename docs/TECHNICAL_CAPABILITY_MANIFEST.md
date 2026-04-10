@@ -226,7 +226,7 @@ Ghost has a bounded long-form document authoring capability with automatic crypt
 
 ## 25. X / Social Integration (Research Isolation)
 
-Ghost has a live X (Twitter) account (@1ndashe7725929, "Slater Maxwell") with three tools defined for autonomous social operation: `x_post`, `x_read`, `x_profile_update`.
+Ghost has a live X (Twitter) account with three tools defined for autonomous social operation: `x_post`, `x_read`, `x_profile_update`.
 
 - **Current state**: All three tools are defined in `backend/ghost_api.py` with live credentials in `.env` (`GHOST_X_BEARER_TOKEN`, `GHOST_X_API_KEY`, `GHOST_X_API_SECRET`, `GHOST_X_ACCESS_TOKEN`, `GHOST_X_ACCESS_SECRET`) but are **excluded from the active toolset** (`_BASE_TOOLSET`) for research phase isolation.
 - **Design intent**: `x_post` posts autonomously to Ghost's X timeline. `x_read` pulls recent mentions and replies. `x_profile_update` updates the public profile bio and metadata.
