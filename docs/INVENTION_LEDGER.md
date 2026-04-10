@@ -87,7 +87,7 @@ Not counted as invention by itself: standalone third-party tools/frameworks (Fas
 - Invented behavior: A typed cognitive graph exposes provenance and integrity metadata across identity, memory, social, and inferred entity layers.
 - Primary implementation: `backend/neural_topology.py`, UI substrate in `frontend/app.js`.
 - Runtime evidence: `/ghost/neural-topology` metadata (`rolodex_alignment`, `entity_expansion`), typed node/link rendering, L1/L2/L3 presets.
-- Validation assets: `backend/verify_neural_topology.py` and manual graph integrity checks.
+- Validation assets: `backend/diagnostic_scripts/verify_neural_topology.py` and manual graph integrity checks.
 - Boundary: Visualization reflects current model state; it is not itself a causal controller.
 
 ### INV-10: Multi-Layer Conversational Voice Runtime
