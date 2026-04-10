@@ -263,6 +263,6 @@ make logs                      # follow backend logs
 python3 scripts/falsification_report.py --base-url http://localhost:8000 --full
 ```
 
-Production: Hetzner VPS (x86_64), `ssh root@87.99.128.116`. Cloudflare tunnel provides HTTPS at `omega-protocol-ghost.com` with HTTP Basic Auth share mode.
+Production: Hetzner VPS (x86_64). Cloudflare tunnel provides HTTPS at `omega-protocol-ghost.com` with HTTP Basic Auth share mode.
 
 Local development: macOS (Apple Silicon). Kuzu world model disabled on ARM; all other subsystems fully operational.

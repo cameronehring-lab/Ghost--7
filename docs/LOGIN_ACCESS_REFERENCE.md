@@ -34,8 +34,8 @@ These are not UI logins, but they are runtime credentials and should be tracked 
 
 | Service | Credential Fields | Local Dev Defaults (from `.env.example`) | Notes |
 |---|---|---|---|
-| PostgreSQL | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `ghost` / `ghost_memory_2025` / `omega` | Used by backend `POSTGRES_URL` connection construction in compose/env. |
-| InfluxDB | `INFLUXDB_INIT_USERNAME`, `INFLUXDB_INIT_PASSWORD`, `INFLUXDB_INIT_ADMIN_TOKEN` | `omega` / `omega_somatic_2025` / `omega-influx-token-2025` | Setup/bootstrap credentials. Rotate for any non-local deployment. |
+| PostgreSQL | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `ghost` / `<set in .env>` / `omega` | Used by backend `POSTGRES_URL` connection construction in compose/env. |
+| InfluxDB | `INFLUXDB_INIT_USERNAME`, `INFLUXDB_INIT_PASSWORD`, `INFLUXDB_INIT_ADMIN_TOKEN` | `omega` / `<set in .env>` / `<set in .env>` | Setup/bootstrap credentials. Rotate for any non-local deployment. |
 | Redis | `REDIS_URL` | `redis://redis:6379/0` | Local dev default has no password. Add auth/TLS if exposed outside local network. |
 
 ## 4. External Provider API Credentials

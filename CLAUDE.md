@@ -8,7 +8,7 @@ OMEGA4 is a self-hosted, data-sovereign autonomous cognition platform running a 
 
 - **Backend**: FastAPI (`backend/main.py`) served by uvicorn on port 8000; also serves the frontend as static files.
 - **Frontend**: Single-file vanilla JS SPA at `frontend/app.js` (~363KB). No build step — edit and reload.
-- **Postgres** (`pgvector/pgvector:pg16`, container `omega-postgres`, user `ghost`, db `omega`, password `ghost_memory_2025`): relational memory, session history, rolodex, identity matrix, monologues, phenomenology logs, proprio transitions.
+- **Postgres** (`pgvector/pgvector:pg16`, container `omega-postgres`, user `ghost`, db `omega`, password set in `.env`): relational memory, session history, rolodex, identity matrix, monologues, phenomenology logs, proprio transitions.
 - **Redis** (`omega-redis`, port 6379): live affective state (`EmotionState`) and ephemeral contact threads.
 - **InfluxDB** (`omega-influxdb`, port 8086) + **Telegraf**: time-series telemetry (somatic/system metrics).
 - **LLM**: Gemini 2.5-flash via `google-genai`. Generation wraps `_generate_with_retry` in `ghost_api.py`.
