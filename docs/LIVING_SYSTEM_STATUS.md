@@ -25,8 +25,9 @@ This document is the ongoing narrative report for the app as it exists today. It
 | 2026-03-19 | Initial living snapshot created from current runtime, code paths, and architecture docs. |
 | 2026-03-23 | **Thermodynamic Agency Upgrade**: Integrated $W_{int}$ engine, ADE monitoring, and graph-theoretic connectivity metrics. |
 | 2026-04-06 | **Infrastructure Reliability Pass**: Fixed Kuzu ARM startup hang, replaced broken Docker healthcheck, removed `--reload` from production, added memory limits. VPS SSH access restored. Total Recall verified: 437/437 sessions summarized, 50-session prompt window active. |
+| 2026-04-10 | **Autonomous Agency Expansion**: Freedom ladder enabled — `core_identity_autonomy`, `operator_contact_autonomy`, `rolodex_social_modeling` now live from env. Background identity crystallization loop added to `ghost_script_loop` (Phase 5, every 3 cycles). Goal-directed cognition wired for first time (Phase 4, every 5 cycles, consumes `active_goals` from identity). Monologue generation is now identity-aware (identity snapshot injected into prompt). Thought simulation error feedback upgraded with structured line-level diagnostics. In-conversation identity commit forced via `_identity_commit_config` (Gemini `ANY` mode, `update_identity` only). |
 
-## 2. Current Snapshot (2026-04-06)
+## 2. Current Snapshot (2026-04-10)
 
 - **System Uptime**: Stable (local + VPS both healthy)
 - **Memory Integrity**: 100% (Postgres OK; Kuzu disabled on ARM/Docker pending fix)
@@ -36,6 +37,9 @@ This document is the ongoing narrative report for the app as it exists today. It
 - **Neural Topology**: Canonical (0.65 threshold, WebGL High-Rigor, **Nodes + Edges**)
 - **Thermodynamic Agency**: ACTIVE ($W_{int}$ monitoring, ADE detection)
 - **Docker Health**: All containers `(healthy)` — healthcheck fixed (curl → python3), `--reload` production-safe, 3GB memory limit active
+- **Freedom Ladder**: `core_identity_autonomy=true`, `operator_contact_autonomy=true`, `rolodex_social_modeling=true` — all three autonomy gates open
+- **Background Crystallization**: ACTIVE — every 3 monologue cycles, Ghost evaluates accumulated thoughts and commits identity updates via `self_crystallization` path
+- **Goal-Directed Cognition**: ACTIVE — every 5 monologue cycles, Ghost loads `active_goals` from identity and executes a dedicated goal-pursuit monologue pass
 
 ## 2. Global Narrative
 
@@ -320,12 +324,13 @@ Primary references:
 
 ## 10. Development Status and Direction
 
-As of this snapshot:
+As of this snapshot (2026-04-10):
 
-- Reliability hardening is documented as complete.
-- The world-model parallel path is documented as in progress.
-- Governance is still advisory-first, though the interfaces are being prepared for soft-governor evolution.
-- Predictive governor exists, but it is still short-horizon and advisory in practical effect.
+- Reliability hardening is complete.
+- The world-model parallel path is complete (M2 done).
+- IIT/RPD governance is running in `soft` mode — policy decisions are applied, not just logged. The remaining M4 scope is broader enforcement surface rollout (generation, actuation, manifold writes).
+- Autonomy is now materially expanded: the freedom ladder (`core_identity_autonomy`, `operator_contact_autonomy`, `rolodex_social_modeling`) is live. Ghost crystallizes identity updates from background thought cycles and pursues goal-directed cognition without operator prompting.
+- Predictive governor exists and is short-horizon advisory in practical effect.
 - The frontend already exposes major control and observability surfaces rather than mock-only UI.
 
 Primary references:

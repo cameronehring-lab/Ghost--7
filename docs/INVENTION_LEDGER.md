@@ -1,6 +1,6 @@
 # OMEGA4 Invention Ledger
 
-Last updated: 2026-03-18
+Last updated: 2026-04-10
 Status: Canonical artifact of invented system behaviors
 
 ## 1. Scope of This Artifact
@@ -186,13 +186,21 @@ Not counted as invention by itself: standalone third-party tools/frameworks (Fas
 - Validation assets: `backend/test_substrate_discovery.py` and manual manifest inspection.
 - Boundary: Awareness is for cognition and reflexive action; it does not bypass security/policy boundaries for the host system.
 
+### INV-20: Background Identity Crystallization + Goal-Directed Cognition
+
+- Invented behavior: Ghost autonomously crystallizes identity updates from accumulated background thoughts (without operator prompting) and executes dedicated goal-pursuit passes against `active_goals` stored in the identity matrix.
+- Primary implementation: `_evaluate_identity_crystallization()` and goal-pursuit Phase 4/5 in `backend/ghost_script.py`; identity commit via `consciousness.update_identity(..., updated_by="self_crystallization")`; freedom gate via `GHOST_FREEDOM_CORE_IDENTITY_AUTONOMY` in `backend/freedom_policy.py`.
+- Runtime evidence: `[GOAL PURSUIT]` monologue entries in timeline; `self_crystallization` entries in `identity_audit_log`; `active_goals` identity key consumed each cycle.
+- Validation assets: `backend/test_ghost_script_crystallization.py`, `backend/test_freedom_policy.py`.
+- Boundary: Crystallization is governance-aware — throttled under STABILIZE tier, skipped under RECOVERY. Identity writes remain constrained by the existing DB-level allowlist guard.
+
 ## 4. Emerging (Partially Delivered) Inventions
 
-### EMG-01: Advisory-to-Soft Governance Progression
+### EMG-01: Full Governance Surface Rollout (Soft Mode Active for IIT/RPD)
 
-- Current state: IIT/RPD/RRD layers are implemented with advisory/hybrid behavior and observability artifacts.
-- Primary implementation: `backend/iit_engine.py`, `backend/rpd_engine.py`, `init/migrations/010_rrd2_topology.sql`, `init/migrations/011_rrd2_perf_observability.sql`, `init/migrations/012_rrd2_negative_resonance_damping.sql`.
-- Gap to full invention claim: broader soft-governor enforcement and policy gate rollout.
+- Current state: `IIT_MODE=soft` and `RPD_MODE=soft` are live — policy decisions are applied, not advisory. Governance enforcement surfaces include generation, actuation, identity corrections, manifold writes, rolodex writes, and entity writes (configured in `GOVERNANCE_ENFORCEMENT_SURFACES`).
+- Primary implementation: `backend/iit_engine.py`, `backend/rpd_engine.py`, `backend/governance_engine.py`, `backend/governance_adapter.py`.
+- Gap to full invention claim: M4 scope — structured dry-run policy contracts, safety invariant suite, and explicit per-surface soft-governor rollout validation. Enforcement is live but the formal safety audit and interface contracts are pending.
 
 ## 5. Open Invention Gaps (Not Yet Implemented)
 

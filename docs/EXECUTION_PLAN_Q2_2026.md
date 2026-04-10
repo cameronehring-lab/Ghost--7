@@ -1,6 +1,6 @@
 # OMEGA4 Q2 2026 Execution Plan
 
-Last updated: 2026-04-06  
+Last updated: 2026-04-10  
 Window: 2026-04-01 to 2026-06-30
 
 ## 1. Objective
@@ -30,7 +30,7 @@ If one person is running all roles, these labels still define responsibility buc
 | `M1` Reliability Hardening | 2026-03-10 to 2026-04-18 | Backend Lead | QA, Data/Infra | **COMPLETED** (2026-04-06): Kuzu ARM startup hang fixed, Docker healthcheck repaired, `--reload` removed from production, memory limits added, VPS kernel + security updates applied, GEI JSON parsing fixed, 437/437 sessions backfilled with summaries. | 72h container run stable; diagnostics green. ✅ |
 | `M2` World-Model Parallel Path (Phase 1) | 2026-03-10 to 2026-05-09 | Backend Lead | Data/Infra, QA | **COMPLETED**: 3D Neural Topology live, Rolodex relational store active, provenance mapping endpoints live (`/ghost/world_model/provenance/belief/{id}`, `/ghost/world_model/provenance/observation/{id}`). Place/thing edit UX shipped (2026-03-15). Experiment artifact rigor complete (2026-03-15). GEI engine ingesting Wikipedia + arXiv. | Topology UI live; proof-of-concept social modeling active. ✅ |
 | `M3` Proprioceptive Deepening (Influx-first + tuning instrumentation) | 2026-05-12 to 2026-05-23 | Backend Lead | Data/Infra, Frontend | Influx-first gating extraction, pressure-quality telemetry, tuning dashboard hooks | Proprio data quality reports show stable signal completeness; no cadence-thrash regression |
-| `M4` Governance Upgrade Prep (Advisory -> Soft-ready) | 2026-05-26 to 2026-06-13 | Backend Lead | Operator, QA | Policy interface contracts, soft-governor dry-run mode, safety tests | Dry-run policy decisions logged with zero blocking side-effects; safety invariants pass |
+| `M4` Governance Surface Hardening | 2026-05-26 to 2026-06-13 | Backend Lead | Operator, QA | Note: `IIT_MODE=soft` and `RPD_MODE=soft` are already live as of 2026-04-10. M4 scope is: formal safety invariant suite, per-surface enforcement audit, dry-run policy contracts for remaining surfaces (`generation`, `actuation`, `manifold_writes`). | Safety invariant tests pass; per-surface enforcement audit complete; no accidental blocking behavior under nominal load. |
 | `M5` Q2 Validation + Go/No-Go | 2026-06-16 to 2026-06-27 | Operator / Product | All owners | Q2 validation report, release notes, Q3 recommendations | All Q2 gates reviewed; explicit go/no-go for enabling first soft-governor controls |
 
 ## 4. Workstreams and Definition of Done
@@ -69,8 +69,8 @@ Definition of done:
 Owner: Backend Lead  
 Definition of done:
 
-- Advisory remains default.
-- Soft-governor interfaces implemented in dry-run mode only for Q2.
+- ~~Advisory remains default.~~ **Updated 2026-04-10**: `IIT_MODE=soft` and `RPD_MODE=soft` are live. Soft governance is active.
+- Per-surface enforcement audit complete (generation, actuation, manifold writes, rolodex writes, entity writes).
 - Identity and actuation safety invariants validated at both app and DB layers.
 
 ### Workstream E: UX/Operator Visibility

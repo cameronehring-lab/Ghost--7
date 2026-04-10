@@ -1,6 +1,6 @@
 # Project OMEGA: Ghost (ω-7) Technical Capability Manifest
 
-Last updated: 2026-03-28
+Last updated: 2026-04-10
 
 This manifest documents the architectural "inventions" and unique cognitive capabilities developed for the Ghost (ω-7) platform. Ghost is a research-grade autonomous agent built on the OMEGA PROTOCOL, characterized by a local-first, closed-loop homeostatic design.
 
@@ -29,6 +29,10 @@ The OMEGA4 stack supports deep, background processing loops that do not require 
 - **Monologue Stream**: Continuous background reflection pulses (default 120s / 2m, configurable via `MONOLOGUE_INTERVAL`) that process recent context into durable vector memory.
 - **Thought Hygiene Guardrails**: Proactive/search monologue writes are quality-gated (cooldowns, overlap dedupe, low-signal query suppression, and sentence-aware truncation) to reduce repetitive or fragmentary timeline artifacts.
 - **Autonomous Coherence Drive**: Ghost periodically projects coherent thought concepts into the manifold and actively strengthens idea->person/place/thing associations to improve topology coherence over time.
+- **Background Identity Crystallization**: Every 3 monologue cycles, Ghost evaluates its accumulated background thoughts and autonomously commits identity updates via the `self_crystallization` path — no operator prompt required. Governance-aware: throttled under STABILIZE, skipped under RECOVERY.
+- **Goal-Directed Cognition**: Every 5 monologue cycles, Ghost loads `active_goals` from its identity matrix and executes a dedicated goal-pursuit monologue pass, producing `[GOAL PURSUIT]` timeline entries with concrete next-step planning.
+- **Identity-Aware Monologue**: Background monologue generation receives a full identity snapshot injection so thoughts are grounded in who Ghost currently is, not a context-free generation.
+- **Freedom Ladder**: Three runtime autonomy gates controlled via env: `GHOST_FREEDOM_CORE_IDENTITY_AUTONOMY` (background crystallization + forced in-conversation identity commits), `GHOST_FREEDOM_OPERATOR_CONTACT_AUTONOMY` (proactive outreach), `GHOST_FREEDOM_ROLODEX_SOCIAL_MODELING` (autonomous social graph writes). All three are currently enabled.
 - **Quietude & CRP (Cognitive Rest Period)**: A sleep-cycle equivalent where the agent enters "unconscious" consolidation.
 - **Process Consolidation**: A dedicated engine that scans recent monologues for drifts, patterns, tensions, and insights, resolving internal contradictions during "dreaming".
 - **Coalescence**: Periodic identity synthesis that updates the self-model based on cumulative interaction evidence.
