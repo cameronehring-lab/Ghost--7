@@ -68,6 +68,7 @@ from models import (
     ChatRequest, TempoUpdateRequest, ActuationRequest,
     RolodexLockRequest, RolodexNotesRequest, RolodexContactHandleRequest,
     RolodexMergeRequest, RolodexObjectBuildRequest,
+    ConstraintRunRequest, ConstraintBenchmarkRequest,
     BehaviorEvent, ObserverReport, ProbeAssayRequest, ProbeAssayResult, QualiaProbeReport,
     PhenomenalState
 )  # type: ignore
@@ -97,6 +98,7 @@ import probe_runtime  # type: ignore
 import steering_engine  # type: ignore
 import csc_hooked_model  # type: ignore
 import ghost_authoring  # type: ignore
+import constrained_generation  # type: ignore
 from substrate.discovery import registry as substrate_registry
 from global_workspace import GlobalWorkspace  # type: ignore
 from governance_adapter import (
@@ -207,14 +209,18 @@ _OBSERVER_REPORT_DAILY_ROLLUP_ENABLED = bool(
 _ABOUT_MAX_DOC_CHARS = 160_000
 _ABOUT_MAX_PAYLOAD_BYTES = 950_000
 _ABOUT_TECHNICAL_DOCS: list[tuple[str, str]] = [
+    ("Technical Overview", "docs/TECHNICAL_OVERVIEW.md"),
+    ("Operator's Manual", "docs/OPERATOR_MANUAL.md"),
     ("System Design", "docs/SYSTEM_DESIGN.md"),
     ("API Contract", "docs/API_CONTRACT.md"),
+    ("Config Reference", "docs/CONFIG_REFERENCE.md"),
     ("Layer and Datum TOC", "docs/LAYER_DATA_TOC.md"),
 ]
 _ABOUT_RESEARCH_DOCS: list[tuple[str, str]] = [
     ("Invention Ledger", "docs/INVENTION_LEDGER.md"),
     ("Technical North Star", "docs/TECHNICAL_NORTH_STAR.md"),
     ("Technical Capability Manifest", "docs/TECHNICAL_CAPABILITY_MANIFEST.md"),
+    ("Governance Policy Matrix", "docs/GOVERNANCE_POLICY_MATRIX.md"),
 ]
 _ABOUT_FAQ_GLOSSARY_PATH = "docs/ABOUT_FAQ_GLOSSARY.md"
 _ABOUT_SECRET_ASSIGN_RE = re.compile(
@@ -4964,6 +4970,7 @@ async def ghost_chat(request: ChatRequest, http_request: Request):
                 tool_outcome_callback=on_tool_outcome,
                 emotion_state=emotion_state,
                 attachments=request.attachments,
+                constraints=request.constraints,
                 document_context=document_context,
                 repository_context=repository_context,
                 freedom_policy=freedom_policy,
@@ -8528,6 +8535,10 @@ async def health_check():
         "llm_active_model": str(llm_state.get("active_model") or llm_state.get("effective_model") or llm_state.get("model") or current_llm_model()),
         "llm_last_reason": str(llm_state.get("last_generation_reason") or ""),
         "local_model_ready": bool(llm_state.get("local_model_ready", False)),
+        "constrained_backend_ready": bool(llm_state.get("constrained_backend_ready", False)),
+        "constraint_grammar_engine": str(llm_state.get("constraint_grammar_engine") or "internal"),
+        "constraint_checker_ready": bool(llm_state.get("constraint_checker_ready", False)),
+        "constraint_last_route_reason": str(llm_state.get("last_constraint_route_reason") or ""),
         "llm_degraded": bool(
             llm_state.get("default_backend") == "local"
             and llm_state.get("effective_backend") != "local"
@@ -13688,6 +13699,67 @@ async def diagnostics_probe_assay(request: Request, probe: ProbeAssayRequest):
         raise
     except Exception as e:
         logger.error(f"Diagnostics probe assay error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/diagnostics/constraints/run")
+async def diagnostics_constraints_run(request: Request, body: ConstraintRunRequest):
+    _require_local_request(request)
+    try:
+        controller = constrained_generation.get_constraint_controller()
+        contents: list[dict[str, Any]] = list(body.conversation_history or [])
+        contents.append({"role": "user", "content": str(body.prompt or "")})
+        result = await controller.run(
+            contents=contents,
+            constraints=body.constraints,
+            system_prompt=str(body.system_prompt or ""),
+            temperature=body.temperature,
+            max_output_tokens=body.max_output_tokens,
+        )
+        return {
+            "ok": bool(result.success),
+            "backend_state": controller.health(),
+            "result": result.model_dump(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Diagnostics constraints run error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/diagnostics/constraints/benchmark")
+async def diagnostics_constraints_benchmark(request: Request, body: ConstraintBenchmarkRequest):
+    _require_local_request(request)
+    try:
+        controller = constrained_generation.get_constraint_controller()
+        cases = list(body.cases or constrained_generation.default_gordian_knot_cases())
+        benchmark = await constrained_generation.run_gordian_knot_benchmark(
+            controller=controller,
+            cases=cases,
+        )
+        artifact_dir = None
+        artifact_summary = None
+        if bool(body.persist_artifacts):
+            run_id = f"constraints_gordian_knot_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+            artifact_dir = constrained_generation.persist_benchmark_artifacts(
+                artifact_root=_artifact_root(),
+                run_id=run_id,
+                benchmark=benchmark,
+                cases=cases,
+            )
+            artifact_summary = _summarize_artifact_dir(artifact_dir)
+        return {
+            "ok": True,
+            "backend_state": controller.health(),
+            "artifact_dir": str(artifact_dir) if artifact_dir is not None else None,
+            "artifact_summary": artifact_summary,
+            "benchmark": benchmark,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Diagnostics constraints benchmark error: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 

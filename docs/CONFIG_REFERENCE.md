@@ -38,6 +38,27 @@ Not production-ready. Requires a running Ollama or OpenAI-compatible server.
 | `LOCAL_LLM_FALLBACK_TO_GEMINI_ENABLED` | `true` | Fall back to Gemini if local model fails. |
 | `LOCAL_LLM_AUTO_PULL_ENABLED` | `false` | Auto-pull model via Ollama API on startup. |
 
+### Constrained Local Generation
+
+Used only for turns that include `ChatRequest.constraints` and for `/diagnostics/constraints/*`. This path is fail-closed and does not replace normal Gemini chat.
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `CONSTRAINED_LLM_MODEL_ID` | `Qwen/Qwen2.5-0.5B-Instruct` | Local Hugging Face model used by the constrained `transformers` backend. |
+| `CONSTRAINED_LLM_DEVICE` | `cpu` | `cpu` / `mps` / `cuda`, depending on local hardware. |
+| `CONSTRAINED_LLM_MAX_NEW_TOKENS` | `160` | Hard upper bound for constrained generation attempts. |
+| `CONSTRAINED_LLM_TEMPERATURE` | `0.2` | Default constrained-turn sampling temperature. |
+| `CONSTRAINED_LLM_SEED` | `1337` | Base seed for constrained draft/checker retries. |
+| `CONSTRAINED_LLM_MAX_RETRIES` | `3` | Maximum hidden retry attempts before fail-closed refusal. |
+| `CONSTRAINT_GRAMMAR_ENGINE` | `outlines` | Grammar runtime preference. Current implementation falls back to internal masking when Outlines is not needed or unavailable. |
+| `CONSTRAINT_CHECKER_ENABLED` | `true` | Enable hidden checker-hint generation between validator failures. |
+| `CONSTRAINT_CHECKER_MAX_HINT_TOKENS` | `96` | Max checker hint size for the hidden retry loop. |
+
+Runtime requirements for the constrained local path:
+
+- Python packages: `torch`, `transformers`, `regex`, `jsonschema`, `outlines`
+- On Python 3.14, `outlines_core` may need a local Rust toolchain and `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` during installation.
+
 ---
 
 ## Infrastructure Connections
@@ -59,7 +80,7 @@ Not production-ready. Requires a running Ollama or OpenAI-compatible server.
 | Variable | Default | Notes |
 |----------|---------|-------|
 | `OPERATOR_API_TOKEN` | _(empty)_ | Token for privileged control routes (`/ghost/actuate`, `/config/tempo`). Required for non-local deployments. Sent as `X-Operator-Token` or `Authorization: Bearer`. |
-| `OPS_TEST_CODE` | `1NDASHE77` | Code for the hidden ops panel. Click snail logo in header. Change this. Sent as `X-Ops-Code` header. |
+| `OPS_TEST_CODE` | _(set in .env)_ | Code for the hidden ops panel. Click snail logo in header. **Must be set before use.** Sent as `X-Ops-Code` header. |
 | `SHARE_MODE_ENABLED` | `false` | Enable HTTP Basic Auth across all routes (for sharing with others). |
 | `SHARE_MODE_USERNAME` | `omega` | Username for share mode. |
 | `SHARE_MODE_PASSWORD` | _(empty)_ | Password for share mode. Must be set. |

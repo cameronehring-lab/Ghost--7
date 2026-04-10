@@ -19,6 +19,7 @@ make clean                           # destroy all volumes (data loss)
 
 ```bash
 curl http://localhost:8000/health                          # stack health
+curl "http://localhost:8000/ghost/llm/backend?include_health=true"   # LLM + constrained backend health
 curl http://localhost:8000/somatic                         # live affect state
 python3 scripts/backend_bootstrap_verify.py               # full bootstrap verify
 python3 scripts/falsification_report.py --full            # evidence audit
@@ -46,7 +47,7 @@ python3 scripts/falsification_report.py --full            # evidence audit
 | Gate | Default | Where |
 |------|---------|-------|
 | Boot overlay | `OMEGA` | Frontend only — not backend security |
-| Ops panel | `1NDASHE77` | Click snail logo in header; set `OPS_TEST_CODE` in `.env` |
+| Ops panel | _(set in .env)_ | Click snail logo in header; set `OPS_TEST_CODE` in `.env` |
 | Share mode | set in `.env` | `SHARE_MODE_USERNAME` / `SHARE_MODE_PASSWORD` |
 
 ## 18 Tools (Quick List)
@@ -65,6 +66,7 @@ python3 scripts/falsification_report.py --full            # evidence audit
 |-----|---------|
 | `http://localhost:8000` | Main UI |
 | `http://localhost:8000/health` | Stack health JSON |
+| `http://localhost:8000/ghost/llm/backend?include_health=true` | LLM backend + constrained runtime health |
 | `http://localhost:8000/somatic` | Live affect state |
 | `http://localhost:8000/ghost/self/architecture` | Ghost's live autonomy contract |
 | `http://localhost:8000/ghost/autonomy/state` | Drift watchdog status |
@@ -77,6 +79,8 @@ python3 scripts/falsification_report.py --base-url http://localhost:8000 --full
 python3 scripts/backend_bootstrap_verify.py --base-url http://localhost:8000
 bash scripts/psych_eval_snapshot.sh --window daily
 bash scripts/psych_eval_snapshot.sh --window weekly
+curl -X POST http://localhost:8000/diagnostics/constraints/run -H "Content-Type: application/json" -d '{"prompt":"Say exactly two words.","constraints":{"exact_word_count":2}}'
+curl -X POST http://localhost:8000/diagnostics/constraints/benchmark -H "Content-Type: application/json" -d '{"persist_artifacts":true}'
 ```
 
 ## Docker Recovery Watchdog

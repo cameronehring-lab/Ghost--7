@@ -161,6 +161,61 @@ class ChatAttachment(BaseModel):
     data: str  # base64 encoded data
 
 
+class ConstraintSpec(BaseModel):
+    """Turn-scoped constrained-generation contract."""
+    regex: Optional[str] = None
+    cfg: Optional[Dict[str, Any] | str] = None
+    json_schema: Optional[Dict[str, Any]] = None
+    exact_word_count: Optional[int] = None
+    max_word_count: Optional[int] = None
+    exact_char_count: Optional[int] = None
+    max_char_count: Optional[int] = None
+    math_check: Optional[str] = None
+    benchmark_case_id: Optional[str] = None
+
+
+class ConstraintFailure(BaseModel):
+    code: str
+    message: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ConstraintResult(BaseModel):
+    success: bool = False
+    text: str = ""
+    attempts_used: int = 0
+    route: str = "unrouted"
+    grammar_engine: str = "internal"
+    checker_used: bool = False
+    validation_passed: bool = False
+    benchmark_case_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    failure: Optional[ConstraintFailure] = None
+
+
+class ConstraintRunRequest(BaseModel):
+    prompt: str
+    constraints: ConstraintSpec
+    system_prompt: Optional[str] = None
+    conversation_history: List[Dict[str, Any]] = Field(default_factory=list)
+    temperature: Optional[float] = None
+    max_output_tokens: Optional[int] = None
+
+
+class ConstraintBenchmarkCase(BaseModel):
+    case_id: str
+    prompt: str
+    constraints: ConstraintSpec
+    system_prompt: Optional[str] = None
+    expected_failure_code: Optional[str] = None
+
+
+class ConstraintBenchmarkRequest(BaseModel):
+    suite_name: str = "gordian_knot"
+    cases: List[ConstraintBenchmarkCase] = Field(default_factory=list)
+    persist_artifacts: bool = True
+
+
 class ChatRequest(BaseModel):
     """Incoming chat message from the frontend."""
     message: str
@@ -169,6 +224,7 @@ class ChatRequest(BaseModel):
     mode: Optional[str] = None
     mode_meta: Optional[Dict[str, Any]] = None
     attachments: Optional[List[ChatAttachment]] = None
+    constraints: Optional[ConstraintSpec] = None
 
 
 

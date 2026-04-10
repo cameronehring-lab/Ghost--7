@@ -1,6 +1,6 @@
 # OMEGA4 API Contract
 
-Last updated: 2026-03-20
+Last updated: 2026-04-10
 
 This document is the canonical API surface for the running backend (`backend/main.py`).
 It records route availability, auth semantics, and behavior notes required for safe development.
@@ -46,12 +46,12 @@ Additional route-level controls:
 
 | Method | Path | Auth Class | Notes |
 |---|---|---|---|
-| `GET` | `/health` | Public (share-exempt by default) | Liveness and core runtime summary. Includes configured/effective LLM state (`llm_backend`, `model`, `llm_ready`, `local_model_ready`, `llm_effective_backend`, `llm_effective_model`, `llm_degraded`, `llm_degraded_reason`). |
+| `GET` | `/health` | Public (share-exempt by default) | Liveness and core runtime summary. Includes configured/effective LLM state (`llm_backend`, `model`, `llm_ready`, `local_model_ready`, `llm_effective_backend`, `llm_effective_model`, `llm_degraded`, `llm_degraded_reason`) plus constrained-runtime fields (`constrained_backend_ready`, `constraint_grammar_engine`, `constraint_checker_ready`, `constraint_last_route_reason`). |
 | `GET` | `/somatic` | Public | 1s-polled somatic + telemetry snapshot. |
 | `GET` | `/ghost/proprio/state` | Public | Current proprioceptive gate state (pressure, cadence, contributions). |
 | `GET` | `/ghost/proprio/transitions` | Public | Recent gate transitions (`precedes` log). |
 | `GET` | `/ghost/proprio/quality` | Public | Proprio signal coverage + transition-rate diagnostics. |
-| `POST` | `/ghost/chat` | Public + conditional privileged auth | SSE token stream endpoint. Request supports optional `channel` (`operator_ui` default, `ghost_contact` optional), plus optional hidden-mode fields `mode` and `mode_meta` for Morpheus terminal runs. In ghost-contact ephemeral mode, turns bypass DB session/message persistence. Adds two safety gates: (1) core-personality modification requests trigger a developer-code challenge flow; (2) high-risk model-generated actuation tags are blocked unless request includes explicit privileged auth (operator token or ops code). When enabled by heuristics + flags, chat turns also inject multi-source external grounding blocks with a provenance envelope (`[EXTERNAL_GROUNDING_PROVENANCE]`) and ordered source wrappers (`[GROUNDING_SOURCE ...]`). Chat generation now uses a bounded same-turn confirmation loop so actuation/tool outcomes can be reinjected before final text. Emits operational events (`identity_update`, `rolodex_update`, `rolodex_data`, `tts_ready`, `morpheus_mode`, `policy_gate`, etc.). |
+| `POST` | `/ghost/chat` | Public + conditional privileged auth | SSE token stream endpoint. Request supports optional `channel` (`operator_ui` default, `ghost_contact` optional), optional hidden-mode fields `mode` and `mode_meta` for Morpheus terminal runs, and optional `constraints` for constrained decoding. In ghost-contact ephemeral mode, turns bypass DB session/message persistence. Adds two safety gates: (1) core-personality modification requests trigger a developer-code challenge flow; (2) high-risk model-generated actuation tags are blocked unless request includes explicit privileged auth (operator token or ops code). When enabled by heuristics + flags, chat turns also inject multi-source external grounding blocks with a provenance envelope (`[EXTERNAL_GROUNDING_PROVENANCE]`) and ordered source wrappers (`[GROUNDING_SOURCE ...]`). Unconstrained chat uses the existing Gemini loop; constrained turns route to the local `transformers` constraint controller and fail closed if validation cannot pass. Emits operational events (`identity_update`, `rolodex_update`, `rolodex_data`, `tts_ready`, `morpheus_mode`, `policy_gate`, `constraint_result`, `constraint_failure`, etc.). |
 | `GET` | `/ghost/push` | Public | SSE stream for autonomous pushes. |
 | `GET` | `/ghost/dream_stream` | Public | SSE stream for quietude/dream events. |
 | `GET` | `/sse` | Public | SSE status endpoint. |
@@ -62,7 +62,7 @@ Additional route-level controls:
 | `GET` | `/ghost/speech` | Public | TTS synth from text. Returns `400` when `TTS_ENABLED=false` or `TTS_PROVIDER=browser`; returns `500` on synth failure. |
 | `GET` | `/ghost/sessions` | Public | Session list and history metadata. |
 | `GET` | `/ghost/contact/status` | Public | Ghost contact-channel readiness: mode flags, sender account, bridge status, and thread-store backend/TTL. |
-| `GET` | `/ghost/llm/backend` | Public | Configured/effective generation backend state. Returns `default_backend`/`default_model`, `effective_backend`/`effective_model`, fallback policy, local model provisioning state, optional local inference health (`include_health=true`), and optional steering telemetry echo (`include_steering=true`). In CSC hooked mode it also reports diagnostics-only hooked-backend health/capability. `CSC_STRICT_LOCAL_ONLY` remains CSC-assay-only and does not block routine chat readiness. |
+| `GET` | `/ghost/llm/backend` | Public | Configured/effective generation backend state. Returns `default_backend`/`default_model`, `effective_backend`/`effective_model`, fallback policy, local model provisioning state, constrained-runtime readiness (`constrained_backend_ready`, `constraint_grammar_engine`, `constraint_checker_ready`, `last_constraint_route_reason`), optional local inference health (`include_health=true`), and optional steering telemetry echo (`include_steering=true`). In CSC hooked mode it also reports diagnostics-only hooked-backend health/capability. `CSC_STRICT_LOCAL_ONLY` remains CSC-assay-only and does not block routine chat readiness. |
 | `GET` | `/ghost/llm/steering/state` | Public | Latest steering scaffold runtime state (vector/injection/write-back stage metadata). |
 | `GET` | `/ghost/workspace/state` | Public | Continuous Global Workspace (ψ) runtime state: norm, linguistic magnitude, and current prompt crystallization block. |
 | `GET` | `/ghost/identity` | Public | Identity Matrix snapshot. |
@@ -127,6 +127,8 @@ Additional route-level controls:
 | `POST` | `/diagnostics/coalescence/trigger` | Diagnostics local-trust | Trigger coalescence diagnostics. |
 | `POST` | `/diagnostics/somatic/shock` | Diagnostics local-trust | Inject synthetic somatic perturbation. |
 | `POST` | `/diagnostics/probes/assay` | Diagnostics local-trust | Run a controlled qualia probe assay and persist a phenomenology report. |
+| `POST` | `/diagnostics/constraints/run` | Diagnostics local-trust | Execute a one-off constrained generation against the local `transformers` writer/checker stack. Accepts `prompt`, optional `system_prompt`, optional `conversation_history`, and required `constraints`. Returns `ConstraintResult` plus constrained backend health. |
+| `POST` | `/diagnostics/constraints/benchmark` | Diagnostics local-trust | Run the internal `gordian_knot` constraint benchmark suite or a caller-provided case list. Persists `manifest.json`, `run_summary.json`, and per-case artifacts under `backend/data/experiments/constraints_gordian_knot_*` when `persist_artifacts=true`. |
 | `POST` | `/diagnostics/csc/irreducibility` | Diagnostics local-trust | Run CSC A/B irreducibility assay (activation-steered vs prompt-only) on isolated assay backends. Hard guards: required user acknowledgements, healthy configured local inference backend/model, and healthy diagnostics-only hooked backend. This endpoint does not require changing the live chat backend. Persists `manifest.json`, `run_summary.json`, and per-iteration artifacts under `backend/data/experiments/csc_irreducibility_*`. |
 | `GET` | `/diagnostics/evidence/latest` | Diagnostics local-trust | Retrieve latest diagnostic evidence bundle. |
 | `POST` | `/diagnostics/run` | Diagnostics local-trust | Full integrated diagnostics sequence. |
@@ -145,6 +147,8 @@ Additional route-level controls:
 - `rolodex_update`: profile/fact write action summary.
 - `rolodex_data`: fetched profile + facts payload.
 - `tts_ready`: backend-generated audio URL for the response.
+- `constraint_result`: constrained-turn success metadata (`attempts_used`, `grammar_engine`, `checker_used`, `route`, `validation_passed`).
+- `constraint_failure`: constrained-turn fail-closed payload (`code`, `message`, `details`, `result`).
 - `morpheus_mode`: hidden-mode phase/state event (`wake_hijack`, `red_terminal`, `reward`) with run and branch metadata.
 - `morpheus_reward`: hidden terminal reward payload (note + animation frames).
 - `done`: includes `session_id`; standard chat path includes resolved `channel` (`operator_ui` or `ghost_contact`), wake path includes `morpheus_run_id`, terminal mode includes `morpheus_step`.
@@ -244,7 +248,34 @@ Safety boundary:
 - Grounding payloads are not direct actuation instructions.
 - Existing actuation and policy gates remain authoritative.
 
-### 3.4 Same-Turn Action Confirmation Contract
+### 3.4 Constrained Generation Contract
+
+`POST /ghost/chat` supports an optional `constraints` object on the request body.
+
+Supported fields:
+
+- `regex`
+- `cfg`
+- `json_schema`
+- `exact_word_count`, `max_word_count`
+- `exact_char_count`, `max_char_count`
+- `math_check`
+- `benchmark_case_id`
+
+Routing:
+
+- Turns without `constraints` use the existing Gemini chat pipeline.
+- Turns with `constraints` route to the local constrained `transformers` backend.
+- Attachments are currently unsupported on constrained turns and return `constraint_unsupported`.
+
+Execution model:
+
+- A constrained-turn system instruction asks for hidden precomputation and self-check.
+- Hard masking and grammar guidance restrict the decoder.
+- A hidden writer/checker retry loop runs until deterministic Python validation passes or retry budget is exhausted.
+- Failed constrained turns do not silently degrade to prompt-only compliance; they emit `constraint_failure` and do not release invalid text.
+
+### 3.5 Same-Turn Action Confirmation Contract
 
 `POST /ghost/chat` now applies a bounded multi-round controller:
 

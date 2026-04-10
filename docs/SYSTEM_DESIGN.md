@@ -265,6 +265,10 @@ Primary closed-loop path:
   - configured `model`
   - `llm_ready`
   - `local_model_ready`
+  - `constrained_backend_ready`
+  - `constraint_grammar_engine`
+  - `constraint_checker_ready`
+  - `constraint_last_route_reason`
   - `llm_effective_backend`
   - `llm_effective_model`
   - `llm_degraded`
@@ -273,8 +277,16 @@ Primary closed-loop path:
   - configured backend/model intent (`default_backend`, `default_model`)
   - effective runtime backend/model (`effective_backend`, `effective_model`)
   - fallback policy + CSC assay flags
+  - constrained-runtime readiness and health metadata
   - optional runtime Gemini readiness probe when `include_health=true`
   - optional diagnostics-only hooked CSC backend health/capability when `CSC_STEERING_MODE=hooked_local`
+- `/ghost/chat` supports an optional `constraints` payload:
+  - unconstrained turns stay on Gemini
+  - constrained turns route to the local `transformers` constraint controller
+  - constrained turns can emit `constraint_result` or `constraint_failure`
+  - constrained turns fail closed and do not release invalid text
+- `/diagnostics/constraints/run` executes one-off constrained generations against the local writer/checker stack.
+- `/diagnostics/constraints/benchmark` runs the internal `gordian_knot` benchmark suite and can persist artifact bundles under `backend/data/experiments/constraints_gordian_knot_*`.
 - `/ghost/llm/steering/state` reports the latest steering scaffold stage metadata:
   - vector build preview
   - injection metadata

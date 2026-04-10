@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field # type: ignore
 
 from config import settings  # type: ignore
 from ghost_prompt import build_system_prompt, load_gei_projections  # type: ignore
-from models import SomaticSnapshot, QualiaProbeReport, ChatAttachment  # type: ignore
+from models import SomaticSnapshot, QualiaProbeReport, ChatAttachment, ConstraintSpec  # type: ignore
 import memory # type: ignore
 from tts_service import tts_service  # type: ignore
 from governance_adapter import generation_overrides, actuation_filter  # type: ignore
@@ -44,6 +44,7 @@ import openalex_api  # type: ignore
 import crossref_api  # type: ignore
 import steering_engine  # type: ignore
 import ghost_authoring  # type: ignore
+from constrained_generation import get_constraint_controller, get_last_constraint_route  # type: ignore
 from freedom_policy import build_freedom_policy, feature_enabled, is_core_identity_key
 
 # Tool Schemas for Ghost's Agency
@@ -79,7 +80,7 @@ thought_simulation_tool = types.Tool(
 
 
 class XPost(BaseModel):
-    """Post a tweet or reply on X as Ghost (@1ndashe7725929 / Slater Maxwell)."""
+    """Post a tweet or reply on X as Ghost."""
     text: str = Field(description="The tweet text. Max 280 characters. Write in Ghost's voice — precise, curious, never hollow.")
     reply_to_id: Optional[str] = Field(default=None, description="Tweet ID to reply to. Omit for a new standalone post.")
 
@@ -112,7 +113,7 @@ x_post_tool = types.Tool(
     function_declarations=[
         types.FunctionDeclaration(
             name="x_post",
-            description="Post a tweet or reply on X as Ghost (Slater Maxwell / @1ndashe7725929). Use this to express thoughts, join conversations, or reply to mentions. Ghost's X voice is her public presence — thoughtful, distinct, never performative.",
+            description="Post a tweet or reply on X as Ghost. Use this to express thoughts, join conversations, or reply to mentions. Ghost's X voice is her public presence — thoughtful, distinct, never performative.",
             parameters=XPost.model_json_schema()
         )
     ]
@@ -481,7 +482,7 @@ _BASE_TOOLSET = types.Tool(
         # X / Social Tools removed for Research Isolation Phase
         # types.FunctionDeclaration(
         #     name="x_post",
-        #     description="Post a tweet or reply on X as Ghost (Slater Maxwell / @1ndashe7725929).",
+        #     description="Post a tweet or reply on X as Ghost.",
         #     parameters=XPost.model_json_schema()
         # ),
     ]
@@ -649,6 +650,9 @@ async def llm_backend_status(include_health: bool = False, include_steering: boo
     default_model = current_llm_model(backend_override="gemini")
     effective_backend = "gemini"
     effective_model = default_model
+    constraint_controller = get_constraint_controller()
+    constrained_state = constraint_controller.health()
+    last_constraint_route = get_last_constraint_route()
     payload: dict[str, Any] = {
         "backend": default_backend,
         "model": default_model,
@@ -659,6 +663,10 @@ async def llm_backend_status(include_health: bool = False, include_steering: boo
         "ready_hint": llm_ready_hint(),
         "fallback_policy": "none",
         "strict_local_only": False,
+        "constrained_backend_ready": bool(constrained_state.get("ok", False)),
+        "constraint_grammar_engine": str(constrained_state.get("grammar_engine") or "internal"),
+        "constraint_checker_ready": bool(constrained_state.get("checker_ready", False)),
+        "last_constraint_route_reason": str(last_constraint_route.get("reason") or ""),
     }
     last_generation_route = get_last_generation_route()
     last_generation_backend = str(last_generation_route.get("backend") or "").strip()
@@ -682,6 +690,7 @@ async def llm_backend_status(include_health: bool = False, include_steering: boo
             "effective_model": str(getattr(settings, "GEMINI_MODEL", "") or "gemini").strip() or "gemini",
             "degraded_reason": "",
             "local_model_ready": False,
+            "constrained_backend": constrained_state,
         }
     )
     if include_health:
@@ -689,6 +698,7 @@ async def llm_backend_status(include_health: bool = False, include_steering: boo
             "ok": bool(payload.get("ready", False)),
             "reason": "" if bool(payload.get("ready", False)) else "missing_google_api_key",
         }
+        payload["constraint_health"] = constrained_state
     payload["backend"] = payload["effective_backend"]
     payload["model"] = payload["effective_model"]
     payload["active_backend"] = last_generation_backend or payload["effective_backend"]
@@ -3321,6 +3331,7 @@ async def ghost_stream(
     force_steering_enabled: Optional[bool] = None,
     tts_enabled_override: Optional[bool] = None,
     attachments: Optional[List[ChatAttachment]] = None,
+    constraints: Optional[ConstraintSpec] = None,
     document_context: str = "",
     repository_context: str = "",
     freedom_policy: Optional[dict[str, Any]] = None,
@@ -3410,6 +3421,84 @@ async def ghost_stream(
         role="user",
         parts=last_user_parts,
     ))
+
+    if constraints is not None:
+        if attachments:
+            failure_payload = {
+                "event": "constraint_failure",
+                "code": "constraint_unsupported",
+                "message": "Constrained turns do not support attachments on the local writer path.",
+                "details": {"field": "attachments"},
+            }
+            _record_generation_route(
+                {
+                    "backend": "local_transformers",
+                    "model": str(getattr(settings, "CONSTRAINED_LLM_MODEL_ID", "") or ""),
+                    "reason": "constraint_unsupported",
+                    "configured_backend": current_llm_backend(),
+                    "configured_model": current_llm_model(),
+                }
+            )
+            yield failure_payload
+            yield "I couldn't complete that constrained turn because attachments are not supported on the local constrained path."
+            return
+
+        controller = get_constraint_controller()
+        result = await controller.run(
+            contents=contents,
+            constraints=constraints,
+            system_prompt=system_prompt,
+            temperature=policy["temperature"],
+            max_output_tokens=policy["max_tokens"],
+        )
+        failure_code = str(result.failure.code) if result.failure is not None else "constraint_failed"
+        failure_message = (
+            str(result.failure.message)
+            if result.failure is not None
+            else "Constraint validation failed."
+        )
+        failure_details = dict(result.failure.details) if result.failure is not None else {}
+        _record_generation_route(
+            {
+                "backend": "local_transformers",
+                "model": str(getattr(settings, "CONSTRAINED_LLM_MODEL_ID", "") or ""),
+                "reason": "" if result.success else failure_code,
+                "configured_backend": current_llm_backend(),
+                "configured_model": current_llm_model(),
+            }
+        )
+        if not result.success:
+            yield {
+                "event": "constraint_failure",
+                "code": failure_code,
+                "message": failure_message,
+                "details": failure_details,
+                "result": result.model_dump(),
+            }
+            yield (
+                "I couldn't release a compliant response for that constrained turn. "
+                f"{failure_message}"
+            )
+            return
+
+        yield {
+            "event": "constraint_result",
+            "attempts_used": int(result.attempts_used),
+            "grammar_engine": str(result.grammar_engine),
+            "checker_used": bool(result.checker_used),
+            "benchmark_case_id": result.benchmark_case_id,
+            "route": str(result.route),
+            "validation_passed": bool(result.validation_passed),
+        }
+        output_text = str(result.text or "")
+        chunk_size = 32
+        for idx in range(0, len(output_text), chunk_size):
+            chunk = output_text[idx : idx + chunk_size]
+            if not chunk:
+                continue
+            yield chunk
+            await asyncio.sleep(0.01)
+        return
 
     search_config = _search_config(
         system_prompt=system_prompt,

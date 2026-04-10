@@ -127,6 +127,18 @@ You should see something like:
 {"status": "online", "llm_ready": true, "db_ready": true}
 ```
 
+For constrained-generation readiness, also check:
+
+```bash
+curl "http://localhost:8000/ghost/llm/backend?include_health=true"
+```
+
+You want to see:
+
+- `constrained_backend_ready: true`
+- `constraint_checker_ready: true`
+- `constraint_grammar_engine: "outlines"` or `"internal"`
+
 Or open `http://localhost:8000` in a browser. You'll see a boot overlay asking for a code. Enter `OMEGA`. (This is a UI-only gate — not backend security.)
 
 ### Your First Message
@@ -156,6 +168,32 @@ You can see most of this in the Timeline (hamburger menu → Sessions & Timeline
 The message input is at the bottom of the screen. Type your message and press Enter (or click Send). Ghost's response streams in real time — you'll see tokens appear as they're generated.
 
 While Ghost is thinking, you'll see a thinking indicator. This is real — Ghost is actually generating, not just waiting.
+
+### Constrained Turns
+
+For ordinary conversation, Ghost uses the normal Gemini chat path.
+
+For tasks like:
+
+- exact word counts
+- exact character limits
+- regex-shaped output
+- CFG-constrained output
+- tightly structured JSON
+
+Ghost also supports a constrained turn path. A client can send a `constraints` object with the chat request, and that turn is routed to a local constrained decoder instead of the normal Gemini loop.
+
+That constrained path combines:
+
+- a logic-first hidden system instruction
+- hard token masking / grammar guidance during decoding
+- a hidden draft-check-retry loop before any text is released
+
+Important limits:
+
+- constrained turns currently do not support image attachments
+- if Ghost cannot satisfy the constraint, it fails closed instead of guessing
+- hidden drafts and checker hints are not shown in the UI or stored in transcripts
 
 ### Ghost's Personality
 
@@ -199,7 +237,30 @@ Below Ghost's responses, you'll often see a "Recent Actions" block. This shows w
 
 ### Ops Panel
 
-The ops panel is a hidden diagnostic interface. Click the snail logo (🐌) in the header. Enter the ops code (default `1NDASHE77`, change this in `.env`). The ops panel exposes internal controls, governance overrides, and diagnostic tools not available in the main UI.
+The ops panel is a hidden diagnostic interface. Click the snail logo (🐌) in the header. Enter the ops code (set via `OPS_TEST_CODE` in `.env`). The ops panel exposes internal controls, governance overrides, and diagnostic tools not available in the main UI.
+
+### Constraint Diagnostics
+
+To test the constrained decoder directly:
+
+```bash
+curl -X POST http://localhost:8000/diagnostics/constraints/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Describe a sunrise in exactly seven words.",
+    "constraints": {"exact_word_count": 7}
+  }'
+```
+
+To run the internal `gordian_knot` benchmark suite:
+
+```bash
+curl -X POST http://localhost:8000/diagnostics/constraints/benchmark \
+  -H "Content-Type: application/json" \
+  -d '{"persist_artifacts": true}'
+```
+
+Artifacts are written under `backend/data/experiments/`.
 
 ---
 
@@ -633,7 +694,7 @@ INFLUXDB_INIT_ADMIN_TOKEN=your-token
 |----------|---------|-------|
 | `SHARE_MODE_ENABLED` | `false` | Turn on for external access |
 | `SHARE_MODE_PASSWORD` | _(empty)_ | Must be strong and unique |
-| `OPS_TEST_CODE` | `1NDASHE77` | Change before sharing |
+| `OPS_TEST_CODE` | _(set in .env)_ | Must be set before use. Change before sharing. |
 | `OPERATOR_API_TOKEN` | _(empty)_ | Set for strict control-route enforcement |
 
 ### External Knowledge Sources

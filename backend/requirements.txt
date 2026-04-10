@@ -30,3 +30,6 @@ python-multipart==0.0.22
 pytest==8.3.5
 pymunk==7.2.0
 tweepy==4.14.0
+regex==2026.2.28
+jsonschema==4.26.0
+outlines==0.1.14

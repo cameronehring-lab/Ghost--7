@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     CSC_HOOKED_MAX_NEW_TOKENS: int = 160
     CSC_HOOKED_TEMPERATURE: float = 0.7
     CSC_HOOKED_SEED: int = 1337
+    CONSTRAINED_LLM_MODEL_ID: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    CONSTRAINED_LLM_DEVICE: str = "cpu"
+    CONSTRAINED_LLM_MAX_NEW_TOKENS: int = 160
+    CONSTRAINED_LLM_TEMPERATURE: float = 0.2
+    CONSTRAINED_LLM_SEED: int = 1337
+    CONSTRAINED_LLM_MAX_RETRIES: int = 3
+    CONSTRAINT_GRAMMAR_ENGINE: str = "outlines"
+    CONSTRAINT_CHECKER_ENABLED: bool = True
+    CONSTRAINT_CHECKER_MAX_HINT_TOKENS: int = 96
 
     # Google Gemini
     GOOGLE_API_KEY: str = ""
@@ -149,7 +158,7 @@ class Settings(BaseSettings):
     SHARE_MODE_USERNAME: str = "omega"
     SHARE_MODE_PASSWORD: str = ""
     SHARE_MODE_EXEMPT_PATHS: str = "/health,/diagnostic/env,/assets/site.webmanifest"
-    OPS_TEST_CODE: str = "1NDASHE77"
+    OPS_TEST_CODE: str = ""
     OPS_SNAPSHOTS_ROOT: str = "/app/data/psych_eval"
 
     # Consciousness / Vector Memory
