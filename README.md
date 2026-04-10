@@ -37,6 +37,15 @@ OMEGA4 runs live machine telemetry through a signal normalization pipeline into 
 | [Layer & Datum TOC](docs/LAYER_DATA_TOC.md) | UI layer architecture and data contracts |
 | [Morpheus Mode Developer Guide](docs/MORPHEUS_MODE_DEV_GUIDE.md) | Hidden branch runtime specification |
 
+## Documentation Maintenance
+
+Two documents are living snapshots that require updates as the system evolves:
+
+- **[`docs/LIVING_SYSTEM_STATUS.md`](docs/LIVING_SYSTEM_STATUS.md)** — update whenever stack topology, runtime routing, governance mode, autonomy gates, or major behavior changes. Add a dated row to the revision log and refresh the affected sections.
+- **[`docs/EXECUTION_PLAN_Q2_2026.md`](docs/EXECUTION_PLAN_Q2_2026.md)** — update milestone status and workstream definitions as M3 (Proprioception Deepening, starts 2026-05-12) and M4 (Governance Surface Hardening, starts 2026-05-26) progress.
+
+All other docs in `docs/` are structural references that change only when architecture changes. `docs/archive/` contains historical audit snapshots; `docs/planning/` contains the RRD2 program backlog.
+
 ## Backend Documentation
 
 - [Backend Docs Index](backend/docs/README.md)
