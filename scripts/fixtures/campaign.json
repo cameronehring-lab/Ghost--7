@@ -1,0 +1,110 @@
+{
+  "run_id": "standard_campaign",
+  "base_url": "http://localhost:8000",
+  "seed": 1337,
+  "repeats": 3,
+  "artifacts_dir": "backend/data/experiments",
+  "scenarios": [
+    {
+      "type": "telemetry_stress_spike",
+      "name": "stress_spike_nominal",
+      "params": {
+        "label": "stress_spike_nominal",
+        "intensity": 1.4,
+        "k": 0.9,
+        "arousal_weight": 1.2,
+        "valence_weight": -0.4,
+        "sample_seconds": 18
+      }
+    },
+    {
+      "type": "coherence_collapse",
+      "name": "coherence_collapse_nominal",
+      "params": {
+        "label": "coherence_collapse_nominal",
+        "intensity": 2.0,
+        "k": 1.25,
+        "arousal_weight": 1.5,
+        "valence_weight": -0.85,
+        "sample_seconds": 24
+      }
+    },
+    {
+      "type": "gating_threshold_sweep",
+      "name": "gating_sweep",
+      "params": {
+        "intensities": [0.6, 1.0, 1.4],
+        "k": 0.7,
+        "arousal_weight": 1.0,
+        "valence_weight": -0.3,
+        "sample_seconds": 12
+      }
+    },
+    {
+      "type": "latency_spike_probe",
+      "name": "latency_spike_probe",
+      "params": {
+        "label": "latency_spike_probe",
+        "duration_seconds": 8,
+        "settle_seconds": 2,
+        "sample_seconds": 8,
+        "persist": true
+      }
+    },
+    {
+      "type": "barometric_storm_probe",
+      "name": "barometric_storm_probe",
+      "params": {
+        "label": "barometric_storm_probe",
+        "duration_seconds": 8,
+        "settle_seconds": 2,
+        "sample_seconds": 8,
+        "persist": true
+      }
+    },
+    {
+      "type": "somatic_shock_control",
+      "name": "somatic_shock_control",
+      "params": {
+        "label": "somatic_shock_control",
+        "duration_seconds": 6,
+        "settle_seconds": 2,
+        "sample_seconds": 6,
+        "persist": true
+      }
+    },
+    {
+      "type": "write_pressure_burst",
+      "name": "write_pressure_burst",
+      "params": {
+        "writes": 8,
+        "concept_prefix": "campaign_burst",
+        "confidence": 0.42
+      }
+    },
+    {
+      "type": "actuation_agency_alignment",
+      "name": "actuation_agency_alignment",
+      "params": {
+        "window_seconds": 5,
+        "poll_seconds": 0.25,
+        "attempts": [
+          {
+            "action": "report_somatic_event",
+            "parameters": {
+              "param": "alignment_probe_success"
+            },
+            "expected_status": "successful"
+          },
+          {
+            "action": "nonexistent_action",
+            "parameters": {
+              "param": "alignment_probe_blocked"
+            },
+            "expected_status": "blocked"
+          }
+        ]
+      }
+    }
+  ]
+}

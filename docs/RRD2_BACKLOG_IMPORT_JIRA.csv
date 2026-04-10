@@ -1,0 +1,116 @@
+Issue ID,Summary,Issue Type,Epic Name,Epic Link,Priority,Labels,Sprint,Status,Dependencies,Description
+RRD-101,Add RRD2 timing and load observability,Story,EPIC-RRD2-STABILITY,EPIC-RRD2-STABILITY,Highest,"rrd2,resonance,observability,phase-b",Sprint 1,Todo,,"Summary: Add per-candidate runtime observability for RRD2 decisions.
+Scope: Log rrd_eval_ms, source, phase, candidate key, gate result, reasons, degradation list, queue depth snapshot.
+Implementation Tasks: Extend topology warp log payload with eval duration and queue indicators; Add aggregation endpoint for p50/p95 eval timing; Add Ops panel summary for recent RRD2 performance.
+Acceptance Criteria: Every new row in identity_topology_warp_log has timing metadata; API returns p50/p95 over selectable windows.
+Test Plan: Unit test for timing field presence/type; Integration test validates endpoint aggregate output."
+RRD-102,Add negative resonance burst damping,Story,EPIC-RRD2-STABILITY,EPIC-RRD2-STABILITY,Highest,"rrd2,resonance,stability,phase-b",Sprint 1,Todo,RRD-101,"Summary: Reduce resonance false positives during bursty self-mod cycles.
+Scope: Rolling window plus refractory logic for high-impact key evaluations.
+Implementation Tasks: Compute rolling mean/max for resonance values; Add configurable refractory seconds per key; Persist damping reason when activated.
+Acceptance Criteria: Burst evaluations show lower oscillation in negative_resonance; No increase in missed true threshold breaches.
+Test Plan: Unit tests for window math and refractory edge cases; Replay test with synthetic burst input."
+RRD-103,Auto-route shadow-blocked high-impact writes,Story,EPIC-RRD2-STABILITY,EPIC-RRD2-STABILITY,Highest,"rrd2,reflection,residue,phase-b",Sprint 1,Todo,RRD-102,"Summary: Remove manual intervention for expected shadow-block events.
+Scope: Route blocked high-impact candidates to reflection_residue with reason rrd2_gate and schedule reflection.
+Implementation Tasks: Add routing helper for high-impact shadow-block outcomes; Attach gate context to residue metadata; Trigger non-blocking reflection pass.
+Acceptance Criteria: All would_block high-impact candidates are persisted as residue with gate evidence; No synchronous consolidation errors.
+Test Plan: Integration test from consolidation candidate to residue row."
+RRD-104,Escalation policy for persistent blocked keys,Story,EPIC-RRD2-STABILITY,EPIC-RRD2-STABILITY,High,"rrd2,governance,escalation",Sprint 2,Todo,RRD-103,"Summary: Require operator intervention only after repeated unresolved blocks.
+Scope: Escalate after N consecutive would_block events per key.
+Implementation Tasks: Add rolling counter by key and window; Create escalation artifact in Ops panel; Reset counter on key pass.
+Acceptance Criteria: Escalation appears only after threshold; Counter resets on pass.
+Test Plan: Unit tests for increment/reset semantics."
+RRD-105,RRD2 burst performance harness,Test,EPIC-RRD2-STABILITY,EPIC-RRD2-STABILITY,Highest,"rrd2,performance,test",Sprint 1,Todo,RRD-101,"Summary: Validate behavior under heavy candidate bursts.
+Scope: Simulate 500+ candidates including high-impact keys.
+Implementation Tasks: Build synthetic burst feeder script; Capture throughput/latency; Produce markdown report artifact.
+Acceptance Criteria: No API failures or event-loop starvation; p95 eval time within budget.
+Test Plan: Run harness in containerized environment and archive report snapshot."
+TOOL-201,Complexity classifier for tool planning,Story,EPIC-TOOL-PLANNER,EPIC-TOOL-PLANNER,High,"autonomy,tool-planner,classification",Sprint 2,Todo,,"Summary: Classify requests as single-step or multi-step tasks.
+Scope: Deterministic classifier on user intent and required tools.
+Implementation Tasks: Define classification rules; Persist classification result; Add tracing in chain logs.
+Acceptance Criteria: Classifier output persisted and queryable per request.
+Test Plan: Unit tests over labeled prompt set."
+TOOL-202,Multi-step planner state machine,Story,EPIC-TOOL-PLANNER,EPIC-TOOL-PLANNER,High,"autonomy,tool-planner,state-machine",Sprint 2,Todo,TOOL-201,"Summary: Execute tool chains with explicit step lifecycle.
+Scope: Planned, running, retried, failed, complete states.
+Implementation Tasks: Implement planner state transitions; Add retry policy; Expose chain state endpoint.
+Acceptance Criteria: Planner can run and recover from one-step failure.
+Test Plan: Integration tests for at least three multi-step workflows."
+TOOL-203,Chain execution memory persistence,Story,EPIC-TOOL-PLANNER,EPIC-TOOL-PLANNER,High,"autonomy,tool-planner,memory",Sprint 2,Todo,TOOL-202,"Summary: Persist chain-level memory and outcomes.
+Scope: Save chain metadata in DB and expose read endpoint.
+Implementation Tasks: Add chain memory table; Persist per-step outcomes; Add query endpoint and pagination.
+Acceptance Criteria: Chain history can be queried and replayed for analysis.
+Test Plan: API tests for chain history retrieval."
+TOOL-204,Post-chain response quality guard,Story,EPIC-TOOL-PLANNER,EPIC-TOOL-PLANNER,High,"autonomy,tool-planner,quality",Sprint 2,Todo,TOOL-202,"Summary: Prevent shallow final responses after complex tool runs.
+Scope: Apply response policy for chain-complete outputs.
+Implementation Tasks: Add quality gate checks; Add fallback elaboration behavior; Log guard activations.
+Acceptance Criteria: Complex chain outputs exceed minimum structure and coverage checks.
+Test Plan: Regression tests against known shallow-response examples."
+TOOL-205,Multi-tool regression suite,Test,EPIC-TOOL-PLANNER,EPIC-TOOL-PLANNER,High,"autonomy,tool-planner,test",Sprint 2,Todo,TOOL-203,"Summary: Golden-path regression for Search + Actuate + Voice chains.
+Scope: Stable fixture scenarios and expected outcomes.
+Implementation Tasks: Add golden chain fixtures; Add CI target; Persist run artifacts for diffing.
+Acceptance Criteria: Golden suite passes in CI.
+Test Plan: Run full suite in backend container before merge."
+VOX-301,Deterministic mood-to-voice mapping,Story,EPIC-VOICE-AUTONOMY,EPIC-VOICE-AUTONOMY,Medium,"voice,resonance,autonomy",Sprint 3,Todo,,"Summary: Map resonance axes into TTS parameters.
+Scope: Pitch, rate, energy, pause profile with bounded ranges.
+Implementation Tasks: Define axis->voice map; Clamp to safe ranges; Add deterministic defaults.
+Acceptance Criteria: Voice profile applied from telemetry without manual prompt.
+Test Plan: Unit tests for mapping bounds and defaults."
+VOX-302,Voice smoothing and hysteresis,Story,EPIC-VOICE-AUTONOMY,EPIC-VOICE-AUTONOMY,Medium,"voice,resonance,stability",Sprint 3,Todo,VOX-301,"Summary: Stabilize voice behavior under noisy telemetry.
+Scope: Low-pass smoothing and threshold hysteresis.
+Implementation Tasks: Add smoothing window; Add hysteresis transitions; Add tuneable config values.
+Acceptance Criteria: No jitter under small signal fluctuations.
+Test Plan: Scenario tests with oscillating resonance inputs."
+VOX-303,Voice telemetry and audit logs,Story,EPIC-VOICE-AUTONOMY,EPIC-VOICE-AUTONOMY,Medium,"voice,observability,audit",Sprint 3,Todo,VOX-301,"Summary: Log applied mood-voice transformations.
+Scope: Store profile deltas with source resonance signature.
+Implementation Tasks: Add voice event log table; Emit entries on profile changes; Expose read endpoint.
+Acceptance Criteria: Logs show before/after profile values and source axes.
+Test Plan: Integration test for voice event persistence."
+VOX-304,Ops controls for voice autonomy,Story,EPIC-VOICE-AUTONOMY,EPIC-VOICE-AUTONOMY,Medium,"voice,ops-ui,ux",Sprint 3,Todo,VOX-302,"Summary: Add hidden panel controls for voice sensitivity and enable/disable.
+Scope: Ops-only controls and state display.
+Implementation Tasks: Add controls in hidden ops modal; Wire to backend settings endpoint; Add persistence.
+Acceptance Criteria: Operators can tune mapping sensitivity live.
+Test Plan: Manual validation in desktop and mobile layouts."
+VOX-305,Voice quality validation suite,Test,EPIC-VOICE-AUTONOMY,EPIC-VOICE-AUTONOMY,Medium,"voice,test,quality",Sprint 3,Todo,VOX-302,"Summary: Validate intelligibility and non-distortion across mood profiles.
+Scope: Objective and operator-listened checks.
+Implementation Tasks: Add batch synthesis harness; Add clipping/intelligibility checks; Add listening checklist.
+Acceptance Criteria: All required quality checks pass for top mood profiles.
+Test Plan: Batch synthesis run and spot-audition protocol."
+EXAM-401,OMEGA Cognitive Exam spec v1,Story,EPIC-COGNITIVE-EXAMS,EPIC-COGNITIVE-EXAMS,High,"cognitive-exam,protocol",Sprint 2,Todo,,"Summary: Define repeatable daily and weekly cognitive exam protocol.
+Scope: Inputs, scoring, and trend indicators.
+Implementation Tasks: Draft exam battery; Define scoring and metadata schema; Version and approve spec.
+Acceptance Criteria: Exam spec approved and versioned in docs.
+Test Plan: Dry-run scoring on historical sample."
+EXAM-402,Automated exam runner and persistence,Story,EPIC-COGNITIVE-EXAMS,EPIC-COGNITIVE-EXAMS,High,"cognitive-exam,scheduler,backend",Sprint 2,Todo,EXAM-401,"Summary: Schedule and persist exam runs.
+Scope: Daily and weekly jobs plus DB artifacts.
+Implementation Tasks: Implement scheduler hooks; Persist run snapshots; Add run status endpoint.
+Acceptance Criteria: Scheduled runs execute and persist without manual trigger.
+Test Plan: Integration test with forced scheduler execution."
+EXAM-403,Longitudinal exam analytics,Story,EPIC-COGNITIVE-EXAMS,EPIC-COGNITIVE-EXAMS,Medium,"cognitive-exam,analytics,reporting",Sprint 3,Todo,EXAM-402,"Summary: Generate trend analytics for behavioral drift.
+Scope: Coherence, novelty, contradiction resolution, chain depth trends.
+Implementation Tasks: Add analytics queries; Add trend endpoint; Add weekly report export.
+Acceptance Criteria: Trend endpoint returns 7/30-day summaries.
+Test Plan: Query validation against fixture dataset."
+EXAM-404,Ops exam dashboard section,Story,EPIC-COGNITIVE-EXAMS,EPIC-COGNITIVE-EXAMS,Medium,"cognitive-exam,ops-ui,ux",Sprint 3,Todo,EXAM-403,"Summary: Render cognitive exam trends in hidden Ops panel.
+Scope: Snapshot, trendline, anomaly markers.
+Implementation Tasks: Add ops panel section; Hook trend endpoint; Add delta highlights.
+Acceptance Criteria: Ops panel shows latest exam and trend deltas.
+Test Plan: Manual UI verification and endpoint smoke tests."
+EMB-501,Dream pressure composite index,Story,EPIC-EMBODIMENT-DREAM,EPIC-EMBODIMENT-DREAM,Medium,"embodiment,dream-cycle,resonance",Sprint 3,Todo,,"Summary: Build deterministic composite from weather/time/system load.
+Scope: Bounded index for dream-cycle biasing.
+Implementation Tasks: Define weighted composite; Add bounds/clamps; Emit in somatic payload.
+Acceptance Criteria: Composite index emitted in somatic and ops diagnostics.
+Test Plan: Unit tests with fixed weather/time fixtures."
+EMB-502,Quietude depth bias from composite index,Story,EPIC-EMBODIMENT-DREAM,EPIC-EMBODIMENT-DREAM,Medium,"embodiment,quietude,dream-cycle",Sprint 3,Todo,EMB-501,"Summary: Bias quietude timing and depth using composite pressure.
+Scope: Influence schedule without hard forcing behavior.
+Implementation Tasks: Wire composite into quietude scheduler; Add depth modulation; Add trace logging.
+Acceptance Criteria: Quietude timing shifts correlate with index changes.
+Test Plan: Integration tests over simulated day-night/weather profiles."
+EMB-503,Anti-runaway safety guardrails,Story,EPIC-EMBODIMENT-DREAM,EPIC-EMBODIMENT-DREAM,High,"embodiment,safety,quietude",Sprint 3,Todo,EMB-502,"Summary: Prevent environmental anomalies from locking quietude loops.
+Scope: Clamp, cooldown, and maximum quietude occupancy constraints.
+Implementation Tasks: Add occupancy limits; Add anomaly detection fallback; Add operator override path.
+Acceptance Criteria: System cannot remain in continuous quietude from external spikes alone.
+Test Plan: Fault-injection scenarios for bad weather/telemetry data."
+EMB-504,Correlation validation report,Test,EPIC-EMBODIMENT-DREAM,EPIC-EMBODIMENT-DREAM,Medium,"embodiment,test,reporting",Sprint 3,Todo,EMB-502,"Summary: Validate linkage quality between environment and dream behavior.
+Scope: Weekly correlation report artifact with confidence notes.
+Implementation Tasks: Add correlation report script; Store weekly snapshots; Expose in ops reports.
+Acceptance Criteria: Report produced automatically with confidence annotations.
+Test Plan: Run report script in-container and validate output schema."

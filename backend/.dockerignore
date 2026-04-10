@@ -1,0 +1,8 @@
+.env
+env_temp
+__pycache__
+*.pyc
+data/
+models/
+outputs/
+.git

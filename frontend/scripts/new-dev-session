@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from change_recording_lib import append_text, ensure_parent, local_timestamp, resolve_workspace
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Append a dev-log entry for the current session.")
+    parser.add_argument("summary", nargs="+", help="Short summary of the session.")
+    parser.add_argument("--repo", default=str(Path(__file__).resolve().parents[1]), help="Tool repo root.")
+    args = parser.parse_args()
+
+    repo_root = Path(args.repo).expanduser().resolve()
+    summary = " ".join(args.summary).strip()
+    month_file = repo_root / "docs" / "dev-log" / f"{local_timestamp().split()[0][:7]}.md"
+    ensure_parent(month_file)
+
+    if not month_file.exists():
+        month_file.write_text(f"# Dev Log - {local_timestamp().split()[0][:7]}\n\n", encoding="utf-8")
+
+    entry = "\n".join(
+        [
+            f"## {local_timestamp()} - {summary}",
+            "",
+            "- Scope: ",
+            "- Why: ",
+            "- Blockers: ",
+            "- Next: ",
+            "",
+        ]
+    )
+    append_text(month_file, entry)
+    print(month_file)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

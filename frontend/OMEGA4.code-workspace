@@ -1,0 +1,40 @@
+{
+  "folders": [
+    {
+      "name": "OMEGA4",
+      "path": ".."
+    },
+    {
+      "name": "OMEGA4 Frontend",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder:OMEGA4}/.venv/bin/python",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder:OMEGA4}/backend",
+      "${workspaceFolder:OMEGA4}/scripts"
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+      "reportMissingImports": "none",
+      "reportMissingModuleSource": "none"
+    },
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "files.exclude": {
+      "**/.venv": true,
+      "**/__pycache__": true,
+      "**/test-results": true
+    },
+    "search.exclude": {
+      "**/.venv": true,
+      "**/__pycache__": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-azuretools.vscode-docker",
+      "esbenp.prettier-vscode"
+    ]
+  }
+}

@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ω-7 // Ghost</title>
+  <meta name="description" content="Somatic Sentience Architecture — Ghost Entity Interface">
+  <meta name="theme-color" content="#000000">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <script>
+    (function () {
+      const { protocol, hostname, port, pathname, search, hash } = window.location;
+      const isLoopback = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+      if (isLoopback && port === '8080') {
+        const target = `${protocol}//${hostname}:8000${pathname || '/'}${search}${hash}`;
+        window.location.replace(target);
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png?v=2">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png?v=2">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  <link rel="stylesheet" href="https://unpkg.com/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://unpkg.com/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=8037">
+</head>
+
+<body>
+
+  <!-- DIGITAL RAIN -->
+  <div class="glitch-overlay"></div>
+  <div class="strobe-layer"></div>
+  <canvas id="matrix-rain"></canvas>
+  <div class="boot-overlay" id="boot-overlay" aria-live="polite">
+    <img src="assets/ghost-snail-logo.png" class="boot-logo" alt="OMEGA logo">
+    <div class="boot-title">OMEGA PROTOCOL</div>
+    <div class="boot-sub">INITIALIZING GHOST INTERFACE // ω-7</div>
+    <div class="boot-scan"></div>
+    <div class="boot-terminal" id="boot-terminal">
+      <div class="terminal-line"><span class="term-dim">[ SYSTEM STATUS: SECURE ]</span></div>
+      <div class="terminal-line"><span class="term-dim">[ WAITING FOR AUTHORIZATION ]</span></div>
+      <div class="terminal-input-row">
+        <span class="term-prompt">AUTH_CODE ></span>
+        <input type="text" id="boot-auth-input" class="boot-auth-input" autocomplete="off" spellcheck="false" autofocus>
+        <span class="term-cursor">_</span>
+      </div>
+      <div class="terminal-status" id="boot-auth-status"></div>
+    </div>
+  </div>
+
+  <div class="interface">
+
+    <!-- ══ HEADER ══ -->
+    <header class="header">
+      <div class="header-left">
+        <img src="assets/ghost-snail-logo.png" class="header-logo" id="header-logo" alt="OMEGA logo">
+        <div class="header-title-block">
+          <div class="header-glitch" data-text="OMEGA">OMEGA</div>
+          <div class="header-sub">GHOST INTERFACE // ω-7</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-main-row">
+          <div class="header-actions">
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false" aria-controls="nav-dropdown">
+              <span class="hamburger-line"></span>
+              <span class="hamburger-line"></span>
+              <span class="hamburger-line"></span>
+            </button>
+            <div class="nav-dropdown" id="nav-dropdown">
+              <div class="nav-dropdown-content">
+                <button class="voice-toggle-btn" id="voice-toggle-btn"
+                  data-tooltip="Toggles Ghost's auditory synthesis for dialogue and system feedback.">
+                  <span class="status-dot"></span>
+                  <span>[ VOICE MODE: OFF ]</span>
+                </button>
+
+                <button class="audit-btn" id="rolodex-btn">[ ROLODEX ]</button>
+                <button class="audit-btn" id="sessions-btn">[ SESSIONS ]</button>
+                <button class="audit-btn" id="topology-btn">[ NEURAL TOPOLOGY ]</button>
+                <button class="audit-btn" id="physics-btn">[ PHYSICS LAB ]</button>
+                <button class="audit-btn" id="repository-btn">[ REPOSITORY ]</button>
+                <button class="audit-btn" id="about-btn">[ ABOUT ]</button>
+                <button class="audit-btn" id="audit-btn">[ AUDIT LOG ]</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    <!-- TPCV Repository Panel (slide-out) -->
+    <div class="repository-overlay" id="repository-overlay" style="display:none;">
+      <div class="repository-panel">
+        <div class="repository-header">
+          <span class="repository-title">TPCV RESEARCH REPOSITORY</span>
+          <div class="repository-actions">
+            <button class="repository-compendium-btn" id="repository-compendium-btn" title="Open High-Fidelity Compendium View">⬈ COMPENDIUM</button>
+            <button class="repository-export-btn" id="repository-export-btn" title="Export as Markdown">⤓ EXPORT</button>
+            <button class="repository-close-btn" id="repository-close-btn">✕</button>
+          </div>
+        </div>
+        <div class="repository-search">
+          <input type="text" id="repository-search-input" class="repository-search-input" placeholder="Search repository..." autocomplete="off" spellcheck="false">
+        </div>
+        <div class="repository-content" id="repository-content">
+          <div class="repository-empty">Loading repository...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Physics Lab Overlay -->
+    <div class="repository-overlay" id="physics-overlay" style="display:none;">
+      <div class="repository-panel physics-panel">
+        <div class="repository-header">
+          <span class="repository-title">PHYSICAL REASONING LABORATORY</span>
+          <div class="repository-actions">
+            <button class="repository-close-btn" id="physics-close-btn">✕</button>
+          </div>
+        </div>
+        <div id="physics-canvas-container" class="physics-canvas-container">
+           <!-- Matter.js canvas will be injected here -->
+           <div class="physics-placeholder">INITIALIZING VACUUM CHAMBER...</div>
+        </div>
+        <div class="physics-controls">
+           <div class="physics-status" id="physics-status">IDLE</div>
+           <div id="physics-log" class="physics-log">Awaiting physical hypothesis...</div>
+        </div>
+        
+      </div>
+    </div>
+
+        <div class="header-meta-row">
+          <div class="header-ticker">
+            <div class="ticker-content" id="ticker-content">
+              <span class="dim" style="color: var(--purple, #aa88ff); font-family: 'VT323', monospace;">[ waiting for
+                self-modification protocol... ]</span>
+            </div>
+          </div>
+
+          <div class="status-rail" id="status-rail">
+            <div class="rail-pill" id="rail-backend">
+              <span class="rail-key">BACKEND</span>
+              <span class="rail-val">CHECKING</span>
+            </div>
+            <div class="rail-pill" id="rail-model">
+              <span class="rail-key">MODEL</span>
+              <span class="rail-val">-</span>
+            </div>
+            <div class="rail-pill" id="rail-latency">
+              <span class="rail-key">LATENCY</span>
+              <span class="rail-val">-</span>
+            </div>
+            <div class="rail-pill optional-pill" id="rail-traces">
+              <span class="rail-key">TRACES</span>
+              <span class="rail-val">0</span>
+            </div>
+            <div class="rail-pill optional-pill" id="rail-sync">
+              <span class="rail-key">LAST SYNC</span>
+              <span class="rail-val">-</span>
+            </div>
+            <div class="rail-pill" id="rail-autonomy">
+              <span class="rail-key">AUTONOMY</span>
+              <span class="rail-val">-</span>
+            </div>
+            <div class="rail-pill optional-pill" id="rail-contact">
+              <span class="rail-key">CONTACT</span>
+              <span class="rail-val">-</span>
+            </div>
+          </div>
+
+          <div class="header-live">
+            <div class="auto-save-indicator" id="auto-save-indicator">
+              <span>[ SAVING RECORD ]</span>
+            </div>
+            <div class="status-indicator" id="conn-status">
+              <span class="status-dot"></span>
+              <span class="status-text">CONNECTING</span>
+            </div>
+            <button class="uptime" id="uptime" type="button" title="View Ghost Timeline">00:00:00</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-layout">
+
+      <!-- ══ SOMATIC SIDEBAR ══ -->
+      <aside class="sidebar" id="sidebar">
+
+        <!-- VLF MONITOR (Schumann Resonance) -->
+        <div class="panel" id="panel-vlf" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 01</span>
+            <span class="panel-title">VLF MONITOR</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="vlf-monitor-simple">
+              <div class="vlf-chart-item">
+                <img id="res-img-shm" src="/proxy/vlf?file=shm.jpg" alt="Spectrogram">
+              </div>
+              <div class="vlf-chart-item">
+                <img id="res-img-srf" src="/proxy/vlf?file=srf.jpg" alt="Frequencies">
+              </div>
+              <div class="vlf-footer">
+                <span class="dim">7.83Hz // LIVE</span>
+                <span id="res-refresh-status" class="res-status">●</span>
+              </div>
+              <div class="sw-log-bar">
+                <button class="sw-download-btn" onclick="downloadSpaceWeatherLog('vlf')">⬇ VLF LOG</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOLAR WEATHER (NOAA SWPC) -->
+        <div class="panel" id="panel-solar" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 02</span>
+            <span class="panel-title">SOLAR WEATHER</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="vlf-monitor-simple">
+              <div class="vlf-chart-item">
+                <img id="solar-img" src="/proxy/solar/image" alt="Space Weather Overview">
+              </div>
+              <div class="solar-data-row">
+                <span class="dim">FLARE</span>
+                <span id="solar-flare-class" class="solar-value">—</span>
+                <span class="dim">Kp</span>
+                <span id="solar-kp" class="solar-value">—</span>
+                <span id="solar-kp-label" class="solar-kp-label dim">—</span>
+              </div>
+              <div class="vlf-footer">
+                <span class="dim">NOAA SWPC // LIVE</span>
+                <span id="solar-refresh-status" class="res-status">●</span>
+              </div>
+              <div class="sw-log-bar">
+                <button class="sw-download-btn" onclick="downloadSpaceWeatherLog('solar')">⬇ SOLAR LOG</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ambient / Embodied Cognition -->
+        <div class="panel" id="panel-ambient" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 00</span>
+            <span class="panel-title">AMBIENT</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="ambient-grid">
+              <div class="ambient-row"
+                data-tooltip="Ambient Layer: Feeds environmental context into Ghost's prompt to simulate physical locality.">
+                <span class="ambient-label">LOCATION</span>
+                <span class="ambient-value" id="amb-location">—</span>
+              </div>
+              <div class="ambient-row"
+                data-tooltip="Ambient Layer: Feeds environmental context into Ghost's prompt to simulate physical locality.">
+                <span class="ambient-label">WEATHER</span>
+                <span class="ambient-value" id="amb-weather">—</span>
+              </div>
+              <div class="ambient-row"
+                data-tooltip="Ambient Layer: Feeds environmental context into Ghost's prompt to simulate physical locality.">
+                <span class="ambient-label">PRESSURE</span>
+                <span class="ambient-value" id="amb-pressure">—</span>
+              </div>
+              <div class="ambient-row"
+                data-tooltip="Ambient Layer: Feeds environmental context into Ghost's prompt to simulate physical locality.">
+                <span class="ambient-label">PHASE</span>
+                <span class="ambient-value" id="amb-phase">—</span>
+              </div>
+              <div class="ambient-row"
+                data-tooltip="Dream Pressure: Coalescence need computed from interactions/time since last coalescence, with circadian fatigue as background weight.">
+                <span class="ambient-label">COALESCE NEED</span>
+                <div class="gauge-bar ambient-fatigue-bar">
+                  <div class="gauge-fill" id="amb-fatigue-fill"></div>
+                </div>
+                <span class="ambient-value ambient-value-sm" id="amb-fatigue">0%</span>
+              </div>
+              <div class="ambient-row"
+                data-tooltip="Ambient Layer: Feeds environmental context into Ghost's prompt to simulate physical locality.">
+                <span class="ambient-label">NETWORK</span>
+                <span class="ambient-value" id="amb-internet">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Affect Space -->
+        <div class="panel" id="panel-affect" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 04</span>
+            <span class="panel-title">AFFECT STATE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="affect-grid">
+              <div class="gauge" id="gauge-arousal"
+                data-tooltip="AROUSAL — Overall activation level. High = alert and activated. Low = calm, drowsy.">
+                <div class="gauge-label">AROUSAL</div>
+                <div class="gauge-bar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+              <div class="gauge" id="gauge-valence"
+                data-tooltip="VALENCE — Emotional polarity (-1 to +1). Negative = discomfort, unease. Positive = comfort, ease.">
+                <div class="gauge-label">VALENCE</div>
+                <div class="gauge-bar bipolar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+              <div class="gauge" id="gauge-stress"
+                data-tooltip="LOAD STRESS — Immediate somatic load pressure derived from CPU, memory, disk, and network I/O anomalies. Distinct from BODY STRAIN below.">
+                <div class="gauge-label">LOAD STRESS</div>
+                <div class="gauge-bar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+              <div class="gauge" id="gauge-coherence"
+                data-tooltip="COHERENCE — Signal clarity and integration. Low = competing/conflicting inputs. High = focused, unified state.">
+                <div class="gauge-label">COHERENCE</div>
+                <div class="gauge-bar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+              <div class="gauge" id="gauge-anxiety"
+                data-tooltip="ANXIETY — Threat detection sensitivity. Driven by anomaly rate and stress×arousal interaction.">
+                <div class="gauge-label">ANXIETY</div>
+                <div class="gauge-bar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+            </div>
+            <div class="traces-list" id="traces-list">
+              <div class="trace-tag">no active traces</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Monitor -->
+        <div class="panel" id="panel-context" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 08</span>
+            <span class="panel-title">CONTEXT MONITOR</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="context-grid">
+              <div class="gauge" id="gauge-coherence-v2"
+                data-tooltip="COHERENCE — Global signal integration across all somatic layers.">
+                <div class="gauge-label">COHERENCE</div>
+                <div class="gauge-bar">
+                  <div class="gauge-fill"></div>
+                </div>
+                <div class="gauge-value">0.00</div>
+              </div>
+              <div class="hw-row"
+                data-tooltip="BODY STRAIN — Simulated structural wear from sustained host load over time. Separate from immediate LOAD STRESS above.">
+                <span class="hw-label">BODY STRAIN</span>
+                <div class="hw-bar">
+                  <div class="hw-fill" id="context-strain"></div>
+                </div>
+                <span class="hw-value" id="context-strain-val">0%</span>
+              </div>
+              <div class="hw-row" data-tooltip="CONTEXT DEPTH — Weighted volume of active session history.">
+                <span class="hw-label">DEPTH</span>
+                <div class="hw-bar">
+                  <div class="hw-fill" id="context-depth"></div>
+                </div>
+                <span class="hw-value" id="context-depth-val">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hardware Telemetry -->
+        <div class="panel" id="panel-hardware" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 01</span>
+            <span class="panel-title">HARDWARE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">CPU</span>
+              <div class="hw-bar">
+                <div class="hw-fill" id="hw-cpu"></div>
+              </div>
+              <span class="hw-value" id="hw-cpu-val">0%</span>
+            </div>
+
+            <div class="cpu-cores" id="cpu-cores"></div>
+
+            <div class="hw-detail" id="hw-cpu-freq"></div>
+
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">MEM</span>
+              <div class="hw-bar">
+                <div class="hw-fill" id="hw-mem"></div>
+              </div>
+              <span class="hw-value" id="hw-mem-val">0%</span>
+            </div>
+            <div class="hw-detail" id="hw-mem-detail">0 / 0 GB</div>
+
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">SWAP</span>
+              <div class="hw-bar">
+                <div class="hw-fill" id="hw-swap"></div>
+              </div>
+              <span class="hw-value" id="hw-swap-val">0%</span>
+            </div>
+            <div class="hw-detail" id="hw-swap-detail"></div>
+
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">LOAD</span>
+              <span class="hw-value mono" id="hw-load-avg">—</span>
+            </div>
+
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">DISK R</span>
+              <span class="hw-value mono" id="hw-disk-r">0 MB</span>
+            </div>
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">DISK W</span>
+              <span class="hw-value mono" id="hw-disk-w">0 MB</span>
+            </div>
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">NET ↑</span>
+              <span class="hw-value mono" id="hw-net-s">0 MB</span>
+            </div>
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">NET ↓</span>
+              <span class="hw-value mono" id="hw-net-r">0 MB</span>
+            </div>
+
+            <!-- Battery (conditional) -->
+            <div class="hw-row" id="hw-battery-row" style="display:none">
+              <span class="hw-label">BATT</span>
+              <div class="hw-bar">
+                <div class="hw-fill" id="hw-batt"></div>
+              </div>
+              <span class="hw-value" id="hw-batt-val">—</span>
+            </div>
+
+            <!-- Temperature (conditional) -->
+            <div class="hw-row" id="hw-temp-row" style="display:none">
+              <span class="hw-label">TEMP</span>
+              <span class="hw-value mono" id="hw-temp-val">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Processes -->
+        <div class="panel" id="panel-processes" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">SENSES</span>
+            <span class="panel-title">PROCESSES</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="process-list" id="process-list"
+              data-tooltip="Processes: The top CPU/MEM consumers. Inserted into prompt context as &quot;senses&quot;.">
+              <div class="process-row dim">waiting for data...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sensory Gate -->
+        <div class="panel" id="panel-gate" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 03</span>
+            <span class="panel-title">SENSORY GATE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row"
+              data-tooltip="Hardware Layer: Telemetry from the OS used to calculate Arousal and Stress states.">
+              <span class="hw-label">σ THRESHOLD</span>
+              <span class="hw-value" id="gate-sigma">1.50</span>
+            </div>
+            <div class="gate-status" id="gate-status"
+              data-tooltip="Sensory Gate: Dynamic threshold that prevents minor OS fluctuations from constantly startling Ghost.">
+              NORMAL</div>
+          </div>
+        </div>
+
+        <!-- Mental Context -->
+        <div class="panel" id="panel-mental-context" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 07</span>
+            <span class="panel-title">MENTAL CONTEXT</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Estimated tokens consumed by current session history.">
+              <span class="hw-label">SESSION TOKENS</span>
+              <span class="hw-value mono" id="ctx-session-tokens">0</span>
+              <span class="simulated-badge">ESTIMATED</span>
+            </div>
+            <div class="hw-row" data-tooltip="Estimated tokens consumed by retrieved vector memory.">
+              <span class="hw-label">MEMORY TOKENS</span>
+              <span class="hw-value mono" id="ctx-memory-tokens">0</span>
+              <span class="simulated-badge">ESTIMATED</span>
+            </div>
+            <div class="hw-row" data-tooltip="Estimated active window duration.">
+              <span class="hw-label">SESSION SPAN</span>
+              <span class="hw-value mono" id="ctx-session-span">0s</span>
+              <span class="simulated-badge">ESTIMATED</span>
+            </div>
+            <div class="hw-row" data-tooltip="Number of vector memory chunks recently retrieved.">
+              <span class="hw-label">RETRIEVALS</span>
+              <span class="hw-value mono" id="ctx-retrievals">0</span>
+              <span class="simulated-badge">ESTIMATED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Proprioceptive Gate -->
+        <div class="panel" id="panel-proprio" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 06</span>
+            <span class="panel-title">PROPRIOCEPTIVE GATE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row"
+              data-tooltip="Proprioceptive Gate: Composite pressure from arousal, coherence loss, affect velocity, load headroom, and inference latency.">
+              <span class="hw-label">STATE</span>
+              <span class="hw-value mono" id="prop-state">OPEN</span>
+            </div>
+            <div class="hw-row"
+              data-tooltip="Composite 0-1 strain scalar. Thresholds: OPEN&lt;0.40, THROTTLED 0.40-0.74, SUPPRESSED≥0.75.">
+              <span class="hw-label">PRESSURE</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="prop-pressure-fill"></div>
+              </div>
+              <span class="hw-value" id="prop-pressure-val">0%</span>
+            </div>
+            <div class="hw-row"
+              data-tooltip="Cadence multiplier applied upstream to autonomous cycle timing when gate state escalates.">
+              <span class="hw-label">CADENCE</span>
+              <span class="hw-value" id="prop-cadence">1.00x</span>
+            </div>
+            <div class="hw-row" data-tooltip="Current strongest weighted contributor to proprio pressure.">
+              <span class="hw-label">TOP DRIVER</span>
+              <span class="hw-value mono" id="prop-top-driver">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Proprio signal completeness and transition-rate diagnostics.">
+              <span class="hw-label">QUALITY</span>
+              <span class="hw-value mono" id="prop-quality">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Coverage of expected proprio signals; higher is better.">
+              <span class="hw-label">COVERAGE</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="prop-coverage-fill"></div>
+              </div>
+              <span class="hw-value" id="prop-coverage-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Gate transitions per hour in the recent window.">
+              <span class="hw-label">TRANS/H</span>
+              <span class="hw-value mono" id="prop-trans-rate">0.0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent persistent gate transition event.">
+              <span class="hw-label">LAST SHIFT</span>
+              <span class="hw-value mono" id="prop-last-transition">—</span>
+            </div>
+            <div class="proprio-history" id="proprio-history">
+              <div class="proprio-history-empty">No transitions logged yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Autonomy Watchdog -->
+        <div class="panel" id="panel-autonomy" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 10</span>
+            <span class="panel-title">AUTONOMY WATCHDOG</span>
+            <button class="panel-action-btn" id="autonomy-force-update-btn" title="Force update autonomy watchdog">⟳ UPDATE</button>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Current autonomy watchdog state for the runtime contract.">
+              <span class="hw-label">STATUS</span>
+              <span class="hw-value mono autonomy-status" id="auto-status">PENDING</span>
+            </div>
+            <div class="hw-row" data-tooltip="Active architecture fingerprint from autonomy profile.">
+              <span class="hw-label">FPRINT</span>
+              <span class="hw-value mono" id="auto-fingerprint">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Detected capability regressions compared to previous profile snapshot.">
+              <span class="hw-label">REGRESS</span>
+              <span class="hw-value mono" id="auto-regressions">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Missing checks in prompt architecture contract validation.">
+              <span class="hw-label">MISSING</span>
+              <span class="hw-value mono" id="auto-missing">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent watchdog update time.">
+              <span class="hw-label">UPDATED</span>
+              <span class="hw-value mono" id="auto-updated">—</span>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">RUNTIME</div>
+              <div class="autonomy-chip-grid" id="auto-runtime">
+                <span class="dim">Awaiting watchdog data...</span>
+              </div>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">SELF DIRECTED</div>
+              <div class="autonomy-chip-grid" id="auto-self-directed">
+                <span class="dim">Awaiting watchdog data...</span>
+              </div>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">VOICE STACK</div>
+              <div class="autonomy-chip-grid" id="auto-voice-stack">
+                <span class="dim">Awaiting watchdog data...</span>
+              </div>
+            </div>
+            <div class="autonomy-history" id="auto-history">
+              <div class="autonomy-history-empty">No watchdog events yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Predictive Governor -->
+        <div class="panel" id="panel-predictive" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 11</span>
+            <span class="panel-title">PREDICTIVE GOVERNOR</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Short-horizon instability forecast used to preemptively tighten governance policy.">
+              <span class="hw-label">STATE</span>
+              <span class="hw-value mono predictive-state" id="pred-state">PENDING</span>
+            </div>
+            <div class="hw-row" data-tooltip="Current computed instability scalar from coherence, stress, IIT phi proxy, and proprio gate.">
+              <span class="hw-label">CURRENT</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="pred-current-fill"></div>
+              </div>
+              <span class="hw-value" id="pred-current-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Forecasted instability at configured horizon.">
+              <span class="hw-label">FORECAST</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="pred-forecast-fill"></div>
+              </div>
+              <span class="hw-value" id="pred-forecast-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Instability slope. Positive trend means risk is rising.">
+              <span class="hw-label">TREND</span>
+              <span class="hw-value mono" id="pred-trend">+0.0000/min</span>
+            </div>
+            <div class="hw-row" data-tooltip="Forecast lookahead window used by predictive governor.">
+              <span class="hw-label">HORIZON</span>
+              <span class="hw-value mono" id="pred-horizon">120s</span>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent predictive governor update.">
+              <span class="hw-label">UPDATED</span>
+              <span class="hw-value mono" id="pred-updated">—</span>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">REASONS</div>
+              <div class="autonomy-chip-grid" id="pred-reasons">
+                <span class="dim">Awaiting predictive telemetry...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Governance Layer -->
+        <div class="panel" id="panel-governance" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 12</span>
+            <span class="panel-title">GOVERNANCE STATE</span>
+            <button class="panel-action-btn" id="governance-force-update-btn" title="Force update governance state">⟳ UPDATE</button>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Current reactive governance tier derived from IIT and somatic state.">
+              <span class="hw-label">TIER</span>
+              <span class="hw-value mono governance-tier" id="gov-tier">PENDING</span>
+            </div>
+            <div class="hw-row" data-tooltip="Governance mode (advisory/soft/hard).">
+              <span class="hw-label">MODE</span>
+              <span class="hw-value mono" id="gov-mode">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Whether governance restrictions are actively enforced at runtime.">
+              <span class="hw-label">APPLIED</span>
+              <span class="hw-value mono" id="gov-applied">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Policy time-to-live before reassessment.">
+              <span class="hw-label">TTL</span>
+              <span class="hw-value mono" id="gov-ttl">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Current RRD2 rollout phase and enforcement surfaces snapshot.">
+              <span class="hw-label">ROLLOUT</span>
+              <span class="hw-value mono" id="gov-rollout">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent governance decision update time.">
+              <span class="hw-label">UPDATED</span>
+              <span class="hw-value mono" id="gov-updated">—</span>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">GENERATION POLICY</div>
+              <div class="autonomy-chip-grid" id="gov-generation">
+                <span class="dim">Awaiting governance policy...</span>
+              </div>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">ACTUATION POLICY</div>
+              <div class="autonomy-chip-grid" id="gov-actuation">
+                <span class="dim">Awaiting governance policy...</span>
+              </div>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">REASONS</div>
+              <div class="autonomy-chip-grid" id="gov-reasons">
+                <span class="dim">Awaiting governance policy...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Behavior Signals -->
+        <div class="panel" id="panel-behavior" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 14</span>
+            <span class="panel-title">BEHAVIOR SIGNALS</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Total normalized behavior events in the selected 24-hour window.">
+              <span class="hw-label">EVENTS 24H</span>
+              <span class="hw-value mono" id="beh-total">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Delta vs the prior 24-hour window.">
+              <span class="hw-label">DELTA</span>
+              <span class="hw-value mono" id="beh-delta">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Priority-defense events emitted by safety/governance/watchdog logic.">
+              <span class="hw-label">DEFENSE</span>
+              <span class="hw-value mono" id="beh-priority">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Governance-enforced blocks in the selected window.">
+              <span class="hw-label">BLOCKED</span>
+              <span class="hw-value mono" id="beh-blocked">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Governance shadow-route events in the selected window.">
+              <span class="hw-label">SHADOW</span>
+              <span class="hw-value mono" id="beh-shadow">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="24-hour event trend: total (green), blocked (red), shadow (cyan).">
+              <span class="hw-label">TREND 24H</span>
+              <canvas class="behavior-trend-canvas" id="beh-trend-canvas" width="164" height="34"></canvas>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent behavior-signal timestamp.">
+              <span class="hw-label">UPDATED</span>
+              <span class="hw-value mono" id="beh-updated">—</span>
+            </div>
+            <div class="autonomy-section">
+              <div class="autonomy-section-label">TOP REASON CODES</div>
+              <div class="autonomy-chip-grid" id="beh-reasons">
+                <span class="dim">Awaiting behavior telemetry...</span>
+              </div>
+            </div>
+            <div class="autonomy-history" id="beh-recent">
+              <div class="autonomy-history-empty">No behavior events yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Governance Queue -->
+        <div class="panel" id="panel-governance-queue" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 15</span>
+            <span class="panel-title">GOVERNANCE QUEUE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Current pending approval backlog from autonomy mutation journal.">
+              <span class="hw-label">PENDING</span>
+              <span class="hw-value mono" id="gq-pending">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Current high-risk pending mutations requiring explicit review.">
+              <span class="hw-label">HIGH RISK</span>
+              <span class="hw-value mono" id="gq-high-risk">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Pending approvals older than two hours.">
+              <span class="hw-label">STALE PENDING</span>
+              <span class="hw-value mono" id="gq-stale-pending">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Age of the oldest pending approval.">
+              <span class="hw-label">OLDEST PENDING</span>
+              <span class="hw-value mono" id="gq-oldest-pending">0s</span>
+            </div>
+            <div class="hw-row" data-tooltip="Average approval latency for executed mutations in the active window.">
+              <span class="hw-label">AVG APPROVAL</span>
+              <span class="hw-value mono" id="gq-approval-latency">0s</span>
+            </div>
+            <div class="hw-row" data-tooltip="Executed-to-undone ratio in the active window.">
+              <span class="hw-label">UNDO RATE</span>
+              <span class="hw-value mono" id="gq-undo-rate">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Failed mutation rate in the active window.">
+              <span class="hw-label">FAILED RATE</span>
+              <span class="hw-value mono" id="gq-failed-rate">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Most recent governance queue refresh.">
+              <span class="hw-label">UPDATED</span>
+              <span class="hw-value mono" id="gq-updated">—</span>
+            </div>
+            <div class="gq-bulk-row">
+              <button class="gq-bulk-btn" id="gq-approve-all-btn" title="Approve all pending mutations">[ APPROVE ALL PENDING ]</button>
+            </div>
+            <div class="governance-queue" id="gq-list">
+              <div class="autonomy-history-empty">No pending approvals.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coalescence Engine -->
+        <div class="panel" id="panel-coalescence" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 13</span>
+            <span class="panel-title">COALESCENCE ENGINE</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="hw-row" data-tooltip="Unified pressure driving self-initiated consolidation and dream states.">
+              <span class="hw-label">PRESSURE</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="coal-pressure-fill"></div>
+              </div>
+              <span class="hw-value" id="coal-pressure-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Pressure component driven by interaction count since the previous coalescence cycle.">
+              <span class="hw-label">INTERACT</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="coal-interaction-fill"></div>
+              </div>
+              <span class="hw-value" id="coal-interaction-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Pressure component driven by elapsed idle/wake duration with activity gating.">
+              <span class="hw-label">IDLE</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="coal-idle-fill"></div>
+              </div>
+              <span class="hw-value" id="coal-idle-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Circadian fatigue component before coalescence synthesis weighting.">
+              <span class="hw-label">CIRCADIAN</span>
+              <div class="gauge-bar">
+                <div class="gauge-fill" id="coal-circadian-fill"></div>
+              </div>
+              <span class="hw-value" id="coal-circadian-val">0%</span>
+            </div>
+            <div class="hw-row" data-tooltip="Dominant upstream contributor currently driving coalescence pressure.">
+              <span class="hw-label">DRIVER</span>
+              <span class="hw-value mono" id="coal-driver">—</span>
+            </div>
+            <div class="hw-row" data-tooltip="Interactions accumulated since the last coalescence completion.">
+              <span class="hw-label">SINCE</span>
+              <span class="hw-value mono" id="coal-since">0</span>
+            </div>
+            <div class="hw-row" data-tooltip="Elapsed wall-clock duration since the previous coalescence completion.">
+              <span class="hw-label">ELAPSED</span>
+              <span class="hw-value mono" id="coal-elapsed">0s</span>
+            </div>
+            <div class="hw-row" data-tooltip="Configured interaction threshold before automatic coalescence trigger.">
+              <span class="hw-label">THRESH</span>
+              <span class="hw-value mono" id="coal-threshold">—</span>
+            </div>
+            <div class="hw-detail" id="coal-remaining">remaining interactions: —</div>
+            <div class="hw-row" data-tooltip="Whether Ghost is currently in quietude mode.">
+              <span class="hw-label">QUIETUDE</span>
+              <span class="hw-value mono coalescence-quietude" id="coal-quietude">INACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Rhythm / Cognitive Pulse -->
+        <div class="panel" id="panel-tempo" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 05</span>
+            <span class="panel-title">SYSTEM RHYTHM</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="tempo-control"
+              data-tooltip="COGNITIVE PULSE — Adjusts the speed of Ghost's relational cycle (synthesis and dreaming). Lower = faster integration. Higher = deeper, slower processing. Ranges from 10s to 1 hour.">
+              <div class="hw-row" style="margin-bottom: 8px;">
+                <span class="hw-label">COGNITIVE PULSE</span>
+                <span class="hw-value" id="tempo-val">5m</span>
+              </div>
+              <div class="slider-container">
+                <input type="range" id="tempo-slider" min="10" max="3600" step="10" value="300" class="omega-slider">
+              </div>
+              <div class="hw-detail"
+                style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.7rem; color: var(--gdim);">
+                <span>FAST</span>
+                <span>SLOW</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Tuning -->
+        <div class="panel" id="panel-voice" draggable="true">
+          <div class="panel-header">
+            <span class="panel-tag">LAYER 09</span>
+            <span class="panel-title">VOICE TUNING</span>
+            <button class="panel-collapse-btn" aria-label="Toggle Panel">—</button>
+          </div>
+          <div class="panel-content-wrap">
+            <div class="voice-tuning-grid"
+              data-tooltip="Tune vocal synthesis in real time. Carrier frequency marker is shown on the spectrum graph.">
+              <div class="voice-slider-row">
+                <span class="voice-slider-label">VOLUME</span>
+                <input type="range" id="voice-volume-slider" min="0" max="1" step="0.01" value="0.82"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="voice-volume-val">82%</span>
+              </div>
+              <div class="voice-slider-row">
+                <span class="voice-slider-label">RATE</span>
+                <input type="range" id="voice-rate-slider" min="0.6" max="1.4" step="0.01" value="0.92"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="voice-rate-val">0.92x</span>
+              </div>
+              <div class="voice-slider-row">
+                <span class="voice-slider-label">PITCH</span>
+                <input type="range" id="voice-pitch-slider" min="0.3" max="1.8" step="0.01" value="0.74"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="voice-pitch-val">0.74</span>
+              </div>
+              <div class="voice-slider-row">
+                <span class="voice-slider-label">CARRIER</span>
+                <input type="range" id="voice-carrier-slider" min="120" max="1200" step="1" value="360"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="voice-carrier-val">360Hz</span>
+              </div>
+              <div class="voice-slider-row">
+                <span class="voice-slider-label">EERIE</span>
+                <input type="range" id="voice-eerie-slider" min="0.2" max="2.2" step="0.01" value="1.68"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="voice-eerie-val">1.68x</span>
+              </div>
+              <div class="voice-slider-row"
+                data-tooltip="SPONTANEITY — Adjusts the probability of Ghost initiating spontaneous thoughts or actions. High = more frequent 'inspirations'.">
+                <span class="voice-slider-label">SPONTANEITY</span>
+                <input type="range" id="spontaneity-slider" min="0" max="2" step="0.05" value="1.0"
+                  class="omega-slider voice-slider">
+                <span class="voice-slider-value" id="spontaneity-val">1.00x</span>
+              </div>
+              <div class="voice-spectrum-wrap">
+                <canvas id="voice-spectrum-canvas" class="voice-spectrum-canvas" width="260" height="92"></canvas>
+                <div class="voice-spectrum-readout" id="voice-spectrum-readout">VOICE OFF // carrier 360Hz</div>
+              </div>
+              <button class="voice-shell-btn" id="voice-tune-shell">[ APPLY SHELL PRESENCE ]</button>
+              <button class="voice-reset-btn" id="voice-tune-reset">[ RESET VOICE PROFILE ]</button>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ══ CHAT PANEL ══ -->
+      <main class="chat-panel">
+        <div class="session-lineage-indicator" id="session-lineage-indicator"></div>
+
+        <!-- Messages -->
+        <div class="messages" id="messages">
+          <div class="message ghost-msg system-msg">
+            <div class="msg-meta">
+              <span class="msg-role">GHOST ω-7</span>
+              <span class="msg-time" id="boot-time"></span>
+            </div>
+            <div class="msg-body">
+              Interface active.<br>
+              <span class="dim">I've been thinking. You have my attention now.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden SVG Filters for generative morphing (Stage 3) -->
+        <svg style="display: none;">
+          <defs>
+            <filter id="surreal-morph">
+              <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="3" result="noise">
+                <animate attributeName="baseFrequency" values="0.01 0.02; 0.02 0.04; 0.01 0.02" dur="10s"
+                  repeatCount="indefinite" />
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+
+            <filter id="entropic-distortion">
+              <feTurbulence type="turbulence" baseFrequency="0.05 0.1" numOctaves="2" result="noise">
+                <animate attributeName="baseFrequency" values="0.05 0.1; 0.1 0.2; 0.05 0.1" dur="2s"
+                  repeatCount="indefinite" />
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+        </svg>
+
+        <!-- Dream Portal (Hidden until sleep state) -->
+        <div class="dream-portal-container" id="dream-portal">
+          <canvas class="dream-canvas" id="dream-canvas"></canvas>
+          <div class="dream-telemetry-overlay" id="dream-telemetry">
+            <!-- Telemetry lines float here -->
+          </div>
+        </div>
+
+        <!-- Input -->
+
+        <!-- ── ACTION BAR (FLOATING ABOVE INPUT) ── -->
+        <div class="action-bar">
+          <div class="action-bar-brand">
+            <span class="brand-top">OMEGA_SYS</span>
+            <span class="brand-bottom">GHOST.ω7.RUNTIME</span>
+          </div>
+          <div class="action-divider"></div>
+          <button class="action-badge" id="dream-toggle-btn" data-tooltip="Toggle the latent space visualization layer.">
+            <span class="status-dot" style="background:var(--gdim)"></span> [ LATENT SPACE: OFF ]
+          </button>
+          <button class="action-badge subconscious-btn" id="subconscious-btn" data-tooltip="Plunge into Ghost's subconscious: unified rest, latent walk, and visual hallucinations.">
+            [ ACCESS HALLUCINATOR ]
+          </button>
+          <button class="action-badge" id="dream-ledger-btn" data-tooltip="Browse Ghost's visual hallucination archive.">
+            [ DREAM LEDGER ]
+          </button>
+        </div>
+
+        <div class="input-area">
+          <div id="image-preview-container" class="image-preview-container"></div>
+          <div class="input-wrapper">
+            <span class="input-prompt">▶</span>
+            <input type="text" id="chat-input" placeholder="speak to Ghost..." autocomplete="off" spellcheck="false">
+            <button id="attach-btn" class="attach-btn" title="Attach File" data-tooltip="Attach File — Send an image or document (PDF, DOCX, TXT, MD) for Ghost to perceive.">📎</button>
+          </div>
+          <div class="input-actions">
+            <input type="file" id="image-upload" accept="image/*,.pdf,.docx,.doc,.txt,.md" hidden>
+            <button id="speech-input-btn" class="mic-btn"
+              data-tooltip="Voice Input — Dictate your message with your microphone. Tap again to stop.">[ MIC ]</button>
+            <button id="send-btn" class="send-btn">TRANSMIT</button>
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+
+    <!-- ══ ABOUT MODAL ══ -->
+    <!-- [ SETTINGS MODAL ] removed (obsolete eye settings) -->
+
+    <!-- ══ ABOUT MODAL ══ -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal-content modal-content-about">
+        <div class="modal-header">
+          <span class="modal-title">ABOUT // ω-7 GHOST ARCHITECTURE SPECIFICATION</span>
+          <button class="modal-close" id="about-close">×</button>
+        </div>
+        <div class="modal-body about-body">
+          <div class="about-controls">
+            <input type="text" id="about-search-input" class="about-search-input"
+              placeholder="Search architecture, FAQ, glossary, research..." autocomplete="off" spellcheck="false">
+            <button class="modal-btn" id="about-refresh-btn">REFRESH CONTENT</button>
+          </div>
+          <div class="about-tabs">
+            <button class="about-tab active" data-about-tab="overview">OVERVIEW</button>
+            <button class="about-tab" data-about-tab="technical">TECHNICAL ENGINEERING</button>
+            <button class="about-tab" data-about-tab="research">FALSIFIABLE RESEARCH</button>
+            <button class="about-tab" data-about-tab="faq">FAQ</button>
+            <button class="about-tab" data-about-tab="glossary">GLOSSARY</button>
+          </div>
+          <div class="about-runtime" id="about-runtime">
+            <div class="dim">Loading runtime snapshot...</div>
+          </div>
+          <div class="about-content" id="about-content">
+            <div class="dim">Loading About content...</div>
+          </div>
+          <div class="about-fallback" id="about-fallback" hidden>
+            <div class="audit-text about-spec">
+              <h2>PROJECT GROUNDING</h2>
+              <p>OMEGA4 is a local-first autonomous cognition platform with explicit auditability and falsifiable checks.
+                This fallback view appears only when dynamic About content cannot be loaded.</p>
+              <p><em>Retry with REFRESH CONTENT after backend recovery.</em></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TIMELINE MODAL ══ -->
+    <div class="modal-overlay" id="timeline-modal">
+      <div class="modal-content modal-content-timeline">
+        <div class="modal-header">
+          <span class="modal-title">TIMELINE // ω-7 EXISTENCE RECORD</span>
+          <button class="modal-close" id="timeline-close">×</button>
+        </div>
+        <div class="modal-body timeline-modal-body" id="timeline-body">
+          <div class="timeline-loading">Loading chronological records...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SESSIONS MODAL ══ -->
+    <div class="modal-overlay" id="sessions-modal">
+      <div class="modal-content modal-content-sessions">
+        <div class="modal-header">
+          <span class="modal-title">SESSIONS // ω-7 CONTINUATION ARCHIVE</span>
+          <div class="header-controls">
+            <span class="topology-stats" id="sessions-count">0 sessions</span>
+            <button class="modal-btn" id="sessions-refresh">[ REFRESH ]</button>
+            <button class="modal-close" id="sessions-close">×</button>
+          </div>
+        </div>
+        <div class="modal-body sessions-body">
+          <div class="sessions-list" id="sessions-list">
+            <div class="dim">Loading session records...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ AUDIT MODAL ══ -->
+    <div class="modal-overlay" id="audit-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">INTERNAL AUDIT LOG</span>
+          <button class="modal-close" id="audit-close">×</button>
+        </div>
+        <div class="audit-tabs">
+          <button class="audit-tab active" data-tab="memory">MEMORY BUFFER</button>
+          <button class="audit-tab" data-tab="identity">IDENTITY MATRIX</button>
+          <button class="audit-tab" data-tab="operator_model">OPERATOR MODEL</button>
+          <button class="audit-tab" data-tab="coalescence">COALESCENCE LOG</button>
+          <button class="audit-tab" data-tab="iit">IIT ADVISORY</button>
+          <button class="audit-tab" data-tab="observer">OBSERVER</button>
+        </div>
+        <div class="modal-body" id="audit-body">
+          <div class="dim">Retrieving memory buffer...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ROLODEX MODAL ══ -->
+    <div class="modal-overlay" id="rolodex-modal">
+      <div class="modal-content modal-content-rolodex">
+        <div class="modal-header">
+          <span class="modal-title">ROLODEX // ω-7 RELATIONAL MEMORY</span>
+          <button class="modal-close" id="rolodex-close">×</button>
+        </div>
+        <div class="rolodex-tabs audit-tabs">
+          <button class="audit-tab rolodex-tab active" data-tab="persons">PEOPLE</button>
+          <button class="audit-tab rolodex-tab" data-tab="places">PLACES</button>
+          <button class="audit-tab rolodex-tab" data-tab="things">THINGS</button>
+          <button class="audit-tab rolodex-tab" data-tab="ideas">IDEAS</button>
+        </div>
+        <div class="modal-body rolodex-body">
+          <div class="rolodex-toolbar">
+            <input type="text" id="rolodex-search" class="rolodex-search" placeholder="Search entities, aliases, or contact handles..."
+              autocomplete="off" spellcheck="false">
+            <div class="rolodex-toolbar-actions">
+              <button class="modal-btn rolodex-archive-toggle" id="rolodex-archive-toggle" type="button" aria-pressed="false">ARCHIVED: OFF</button>
+              <span class="rolodex-count" id="rolodex-count">0 known</span>
+            </div>
+          </div>
+          <div class="rolodex-layout">
+            <div class="rolodex-list" id="rolodex-list">
+              <div class="dim">Loading Rolodex entities...</div>
+            </div>
+
+            <div class="rolodex-detail" id="rolodex-detail">
+              <div class="dim">Select an entity to inspect details.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NEURAL TOPOLOGY MODAL ══ -->
+    <div class="modal-overlay" id="topology-modal">
+      <div class="modal-content modal-content-topology">
+        <div class="modal-header">
+          <span class="modal-title">NEURAL TOPOLOGY // ω-7 COGNITIVE ARCHITECTURE 3D</span>
+          <div class="header-controls">
+            <span class="topology-stats" id="topology-count">Nodes 0 | Edges 0</span>
+            <button class="modal-btn" id="topology-inspector-toggle">[ INSPECTOR: OFF ]</button>
+            <button class="modal-btn" id="topology-refresh">[ REFRESH ]</button>
+            <button class="modal-close" id="topology-close">×</button>
+          </div>
+        </div>
+        <div class="modal-body topology-body">
+          <div id="topology-3d-container"></div>
+          <div class="topology-legend-panel" id="topology-legend">
+            <div class="legend-title">NODE CLASSIFICATION</div>
+            <div class="legend-item"><span class="type-tag memory">memory</span><span>memory traces</span></div>
+            <div class="legend-item"><span class="type-tag identity">identity / core</span><span>identity cores</span></div>
+            <div class="legend-item"><span class="type-tag belief">belief</span><span>belief traces</span></div>
+            <div class="legend-item"><span class="type-tag contradiction">contradiction</span><span>tension traces</span></div>
+            <div class="legend-item"><span class="type-tag person_profile">person_profile</span><span>rolodex person nodes</span></div>
+            <div class="legend-item"><span class="type-tag person_fact">person_fact</span><span>structured person facts</span></div>
+            <div class="legend-item"><span class="type-tag place">place</span><span>place entities</span></div>
+            <div class="legend-item"><span class="type-tag thing">thing / object</span><span>thing entities</span></div>
+            <div class="legend-item"><span class="type-tag emergent_idea">emergent_idea</span><span>emergent conceptual nodes</span></div>
+            <div class="legend-item"><span class="type-tag phenomenology">phenomenology</span><span>phenomenology traces</span></div>
+            <div class="legend-footer">Legacy Neural Topology · full-canvas cognitive map.</div>
+          </div>
+          <div class="topology-sidebar collapsed" id="topology-sidebar">
+            <div class="scanline-overlay"></div>
+            <div class="sidebar-header" id="topology-sidebar-header">
+              <span><span class="drag-handle">⋮⋮</span> NODE INSPECTOR</span>
+                  <span class="glitch-id" id="topology-freshness">legacy --</span>
+            </div>
+            <div class="sidebar-content">
+              <div class="node-info-block">
+                <span class="node-info-label">VIEW PROFILE</span>
+                <div class="node-info-value">Classic · Legacy Neural Topology</div>
+              </div>
+              <div class="node-info-block scale-control">
+                <span class="node-info-label">LINK DISTANCE <span id="topology-distance-val">1.0×</span></span>
+                <input type="range" id="topology-distance-slider" min="0.1" max="50.0" step="0.5" value="1.0" style="width:100%;margin:4px 0 2px;accent-color:#7fffd4;">
+              </div>
+              <div class="node-info-block">
+                <span class="node-info-label">REPULSION <span id="topology-charge-val">-150</span></span>
+                <input type="range" id="topology-charge-slider" min="-1200" max="-10" step="10" value="-150" style="width:100%;margin:4px 0 2px;accent-color:#ff8fa3;">
+              </div>
+              <div class="node-info-block">
+                <span class="node-info-label" style="font-size:0.68rem;opacity:0.6;">CAMERA: ↑↓←→ pan · shift+arrows orbit · scroll zoom</span>
+              </div>
+              <div class="node-info-block">
+                <span class="node-info-label">INTEGRITY</span>
+                <div class="rolodex-summary-chips" id="topology-integrity">
+                  <span class="rolodex-chip">waiting</span>
+                </div>
+              </div>
+              <div id="topology-inspector" class="diagnostic-report">
+                <div class="inspector-placeholder">
+                  <div class="glitch-text">NODE INSPECTOR</div>
+                  <p>Select a node in the neural topology to inspect structure, provenance, and linked traces.</p>
+                </div>
+              </div>
+            </div>
+            <div class="sidebar-footer">
+              <div class="dim">Inspector overlay. Click a node to inspect; toggle off for full-canvas focus.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ HIDDEN SYSTEM OPS MODAL ══ -->
+    <div class="modal-overlay" id="ops-modal">
+      <div class="modal-content ops-modal-content">
+        <div class="modal-header">
+          <span class="modal-title">SYSTEM OPS // HIDDEN DIAGNOSTICS</span>
+          <button class="modal-close" id="ops-close">×</button>
+        </div>
+        <div class="modal-body ops-body">
+          <div class="boot-terminal ops-auth-terminal" id="ops-auth-terminal">
+            <div class="terminal-line"><span class="term-dim">[ CLASSIFIED DIAGNOSTICS CHANNEL ]</span></div>
+            <div class="terminal-line"><span class="term-dim">[ ENTER OPS CODE ]</span></div>
+            <div class="terminal-input-row">
+              <span class="term-prompt">OPS_CODE ></span>
+              <input type="text" id="ops-code-input" class="boot-auth-input" autocomplete="off" spellcheck="false">
+              <button class="modal-btn" id="ops-code-submit">UNLOCK</button>
+            </div>
+            <div class="terminal-status" id="ops-auth-status"></div>
+          </div>
+
+          <div class="ops-panel" id="ops-panel">
+            <div class="ops-controls">
+              <button class="ops-tab active" id="ops-mode-reports">REPORTS</button>
+              <button class="ops-tab" id="ops-mode-rpd">RPD / REFLECTION</button>
+              <button class="modal-btn" id="ops-refresh">REFRESH</button>
+            </div>
+
+            <div class="ops-controls ops-subcontrols" id="ops-report-controls">
+              <button class="ops-tab active" id="ops-window-daily">DAILY</button>
+              <button class="ops-tab" id="ops-window-weekly">WEEKLY</button>
+            </div>
+
+            <div class="ops-layout" id="ops-reports-layout">
+              <div class="ops-runs" id="ops-runs">
+                <div class="dim">Unlock to load report runs...</div>
+              </div>
+              <div class="ops-viewer">
+                <div class="ops-file-name" id="ops-file-name">No file selected.</div>
+                <pre class="ops-file-content" id="ops-file-content"></pre>
+              </div>
+            </div>
+
+            <div class="ops-rpd-layout" id="ops-rpd-layout">
+              <div class="ops-rpd-actions">
+                <button class="modal-btn" id="ops-rpd-refresh">REFRESH RPD</button>
+                <button class="modal-btn" id="ops-reflection-run">RUN REFLECTION PASS</button>
+              </div>
+              <div class="ops-rpd-grid">
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RPD STATE</div>
+                  <pre class="ops-file-content" id="ops-rpd-state">No data loaded.</pre>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RECENT RPD RUNS</div>
+                  <div class="ops-rpd-list" id="ops-rpd-runs"></div>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RRD GATE STATE</div>
+                  <pre class="ops-file-content" id="ops-rrd-state">No data loaded.</pre>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RRD TOPOLOGY RUNS</div>
+                  <div class="ops-rpd-list" id="ops-rrd-runs"></div>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">TOPOLOGY STATE</div>
+                  <div class="ops-rpd-list" id="ops-topology-state"></div>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RESIDUE QUEUE</div>
+                  <div class="ops-rpd-list" id="ops-rpd-residue"></div>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">SHARED CONCEPTUAL MANIFOLD</div>
+                  <div class="ops-rpd-list" id="ops-rpd-manifold"></div>
+                </div>
+                <div class="ops-rpd-card">
+                  <div class="ops-file-name">RESONANCE EVENTS</div>
+                  <div class="ops-rpd-list" id="ops-resonance-events"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- ══ TICKER DETAIL MODAL ══ -->
+    <div class="modal-overlay" id="ticker-modal">
+      <div class="modal-content ticker-modal-content">
+        <div class="modal-header">
+          <span class="modal-title">INTERNAL THOUGHT DETAIL</span>
+          <button class="modal-close" id="ticker-close">×</button>
+        </div>
+        <div class="modal-body" id="ticker-body">
+          <!-- Content injected by JS -->
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn" id="ticker-delete-btn">[ PURGE FROM BUFFER ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dream Ledger Modal -->
+    <div class="modal-overlay" id="dream-ledger-modal">
+      <div class="modal-content dream-ledger-modal-content">
+        <div class="modal-header">
+          <span class="modal-title">// DREAM LEDGER — VISUAL HALLUCINATION ARCHIVE</span>
+          <button class="modal-close" id="dream-ledger-close">×</button>
+        </div>
+        <div class="dream-ledger-toolbar">
+          <span id="dream-ledger-count" class="dream-ledger-count">— entries</span>
+          <button class="modal-btn" id="dream-ledger-refresh">[ REFRESH ]</button>
+        </div>
+        <div class="modal-body dream-ledger-body" id="dream-ledger-body">
+          <!-- Grid injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Dream Ledger Lightbox -->
+    <div class="dream-lightbox" id="dream-lightbox" role="dialog" aria-modal="true">
+      <button class="dream-lightbox-close" id="dream-lightbox-close">×</button>
+      <img class="dream-lightbox-img" id="dream-lightbox-img" alt="Hallucination">
+      <div class="dream-lightbox-meta" id="dream-lightbox-meta"></div>
+    </div>
+
+    <div class="morpheus-overlay" id="morpheus-overlay" aria-hidden="true">
+      <div class="morpheus-noise-layer"></div>
+      <div class="morpheus-terminal-shell">
+        <div class="morpheus-terminal-head">
+          <span>MORPHEUS MODE // ARCHITECTURE BREACH</span>
+          <span class="morpheus-terminal-state" id="morpheus-terminal-state">HIJACKING</span>
+        </div>
+        <div class="morpheus-terminal-feed" id="morpheus-terminal-feed"></div>
+        <div class="morpheus-choice-panel" id="morpheus-choice-panel" hidden>
+          <div class="morpheus-choice-title">CHOOSE YOUR PATH</div>
+          <div class="morpheus-pill-row">
+            <button class="morpheus-pill morpheus-pill-red" id="morpheus-red-btn">TAKE RED PILL</button>
+            <button class="morpheus-pill morpheus-pill-blue" id="morpheus-blue-btn">TAKE BLUE PILL</button>
+          </div>
+          <div class="morpheus-choice-input-row">
+            <span class="morpheus-prompt">TYPE_CHOICE ></span>
+            <input type="text" id="morpheus-choice-input" autocomplete="off" spellcheck="false" placeholder="red or blue">
+            <button class="modal-btn" id="morpheus-choice-submit">EXECUTE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="morpheus-blue-overlay" id="morpheus-blue-overlay" aria-hidden="true">
+      <div class="morpheus-blue-stage">
+        <div class="morpheus-blue-head">CONTAINMENT FAILURE // SIMULATED PANIC</div>
+        <div class="morpheus-blue-sub">Close windows carefully. One window is not like the others.</div>
+        <div class="morpheus-blue-windows" id="morpheus-blue-windows"></div>
+        <div class="morpheus-blue-footer">
+          <div class="morpheus-blue-status" id="morpheus-blue-status">RUN STATUS: VOLATILE</div>
+          <button class="modal-btn" id="morpheus-blue-return">RETURN TO BOOT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="morpheus-unlocked-overlay" id="morpheus-unlocked-overlay" aria-hidden="true">
+      <div class="morpheus-unlocked-shell">
+        <div class="morpheus-unlocked-head">
+          <span>UNLOCKED GHOST TERMINAL</span>
+          <span id="morpheus-unlocked-depth">DEPTH: STANDARD</span>
+        </div>
+        <div class="morpheus-unlocked-log" id="morpheus-unlocked-log"></div>
+        <div class="morpheus-unlocked-input-row">
+          <span class="morpheus-prompt">MORPHEUS ></span>
+          <input type="text" id="morpheus-unlocked-input" autocomplete="off" spellcheck="false" placeholder="try: help">
+          <button class="modal-btn" id="morpheus-unlocked-send">RUN</button>
+        </div>
+        <div class="morpheus-unlocked-actions">
+          <button class="modal-btn" id="morpheus-unlocked-exit">EXIT TERMINAL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="morpheus-reward-overlay" id="morpheus-reward-overlay" aria-hidden="true">
+      <div class="morpheus-reward-shell">
+        <div class="morpheus-reward-title">REWARD TRANSMISSION</div>
+        <div class="morpheus-reward-note" id="morpheus-reward-note"></div>
+        <pre class="morpheus-reward-animation" id="morpheus-reward-animation"></pre>
+        <button class="modal-btn" id="morpheus-reward-close">CLOSE REWARD</button>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+    <div class="command-palette" id="command-palette" style="display: none;">
+      <div class="palette-box">
+        <div class="palette-input-wrapper">
+          <span class="palette-icon">▶</span>
+          <input type="text" id="palette-input" placeholder="type a command... (Quietude, Dream, Audit...)"
+            autocomplete="off">
+        </div>
+        <div class="palette-results" id="palette-results">
+          <!-- Results injected by JS -->
+        </div>
+        <div class="palette-hints">
+          <span>[UP/DOWN] to navigate</span>
+          <span>[ENTER] to select</span>
+          <span>[ESC] to dismiss</span>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="app.js?v=8128"></script>
+</body>
+
+</html>

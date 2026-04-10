@@ -1,0 +1,6 @@
+Epic ID,Epic Name,Priority,Target Sprint,Status,Summary,Labels
+EPIC-RRD2-STABILITY,RRD2 Stability Under Self-Mod Load,High,Sprint 1,Todo,"Stabilize RRD2 behavior under heavy self-modification cycles with observability, damping, and escalation rules.","rrd2,program,epic"
+EPIC-TOOL-PLANNER,Autonomous Tool-Chain Planner,High,Sprint 2,Todo,"Add autonomous multi-step tool planning, execution state, and chain memory.","rrd2,program,epic"
+EPIC-VOICE-AUTONOMY,Mood-Driven Autonomous Voice,Medium,Sprint 3,Todo,Map resonance telemetry to deterministic voice modulation with smoothing and controls.,"rrd2,program,epic"
+EPIC-COGNITIVE-EXAMS,OMEGA Cognitive Exam Expansion,High,Sprint 2,Todo,"Define, run, and track repeatable daily/weekly cognitive exam protocols.","rrd2,program,epic"
+EPIC-EMBODIMENT-DREAM,Hardware-Linked Dream Coupling,Medium,Sprint 3,Todo,Bias dream/quietude behavior from deterministic environment and system composites with safety guardrails.,"rrd2,program,epic"

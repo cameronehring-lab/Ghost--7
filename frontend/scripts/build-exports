@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+
+from change_recording_lib import build_evidence_markdown, build_timeline_markdown, load_jsonl, resolve_workspace, write_text
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Regenerate timeline and evidence exports from the JSONL ledgers.")
+    parser.add_argument("--workspace", help="Research workspace root.")
+    args = parser.parse_args()
+
+    workspace = resolve_workspace(args.workspace)
+    sources = load_jsonl(workspace / "ledger" / "sources.jsonl")
+    captures = load_jsonl(workspace / "ledger" / "captures.jsonl")
+    artifacts = load_jsonl(workspace / "ledger" / "artifacts.jsonl")
+    claims = load_jsonl(workspace / "ledger" / "claims.jsonl")
+    events = load_jsonl(workspace / "ledger" / "events.jsonl")
+
+    write_text(workspace / "exports" / "timeline.md", build_timeline_markdown(events))
+    write_text(
+        workspace / "exports" / "evidence-log.md",
+        build_evidence_markdown(
+            sources=sources,
+            captures=captures,
+            artifacts=artifacts,
+            claims=claims,
+            events=events,
+        ),
+    )
+
+    print(workspace / "exports" / "timeline.md")
+    print(workspace / "exports" / "evidence-log.md")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

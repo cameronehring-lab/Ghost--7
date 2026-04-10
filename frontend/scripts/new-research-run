@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from change_recording_lib import (
+    append_jsonl,
+    append_text,
+    default_record,
+    ensure_dir,
+    iso_utc,
+    local_timestamp,
+    operator_name,
+    record_id,
+    resolve_workspace,
+    utc_now,
+    write_json,
+)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Create a scaffold record for a research ingest or recovery run.")
+    parser.add_argument("--workspace", help="Research workspace root.")
+    parser.add_argument("--reason", required=True, help="Why the run is being created.")
+    parser.add_argument("--mode", default="recover", help="Run mode, for example recover, ingest, analyze, bootstrap.")
+    parser.add_argument("--source-url", default="", help="Primary source URL, if any.")
+    parser.add_argument("--archive-url", default="", help="Primary archive URL, if any.")
+    parser.add_argument("--confidence", type=float, default=1.0, help="Operator confidence in the run metadata.")
+    parser.add_argument("--event-title", default="", help="Optional title for an event row that mirrors this run.")
+    parser.add_argument("--notes", default="", help="Optional notes to add to the run record.")
+    args = parser.parse_args()
+
+    workspace = resolve_workspace(args.workspace)
+    now = utc_now()
+    year = now.strftime("%Y")
+    month = now.strftime("%m")
+    day = now.strftime("%d")
+    clock = now.strftime("%H%M%S")
+    run_id = record_id("run", args.mode, dt=now)
+    run_dir = workspace / "ledger" / "ingest-runs" / year / month
+    ensure_dir(run_dir)
+    run_path = run_dir / f"{day}-{clock}.json"
+
+    row = default_record(
+        run_id,
+        reason=args.reason,
+        change_type="create",
+        source_url=args.source_url,
+        archive_url=args.archive_url,
+        confidence=args.confidence,
+    )
+    payload = {
+        **row,
+        "run_id": run_id,
+        "mode": args.mode,
+        "status": "open",
+        "notes": args.notes,
+        "workspace_root": str(workspace),
+    }
+    write_json(run_path, payload)
+
+    if args.event_title:
+        event_id = record_id("event", args.event_title, dt=now)
+        event_row = default_record(
+            event_id,
+            reason=args.reason,
+            change_type="create",
+            source_url=args.source_url,
+            archive_url=args.archive_url,
+            confidence=args.confidence,
+        )
+        event_row.update(
+            {
+                "title": args.event_title,
+                "summary": args.notes or args.reason,
+                "event_date": iso_utc(now)[:10],
+                "category": "operations",
+                "run_id": run_id,
+            }
+        )
+        append_jsonl(workspace / "ledger" / "events.jsonl", event_row)
+        payload["related_event_ids"] = [event_id]
+        write_json(run_path, payload)
+
+    research_log = workspace / "journal" / "research-log.md"
+    recovery_log = workspace / "journal" / "recovery-log.md"
+    append_text(
+        research_log,
+        "\n".join(
+            [
+                f"## {local_timestamp()} - {args.mode} - {run_id}",
+                "",
+                f"- Reason: {args.reason}",
+                f"- Source URL: {args.source_url or '(not set)'}",
+                f"- Archive URL: {args.archive_url or '(not set)'}",
+                f"- Notes: {args.notes or '(none)'}",
+                "",
+            ]
+        ),
+    )
+    if args.mode in {"recover", "bootstrap"} or args.source_url or args.archive_url:
+        append_text(
+            recovery_log,
+            "\n".join(
+                [
+                    f"## {local_timestamp()} - {run_id}",
+                    "",
+                    f"- Mode: {args.mode}",
+                    f"- Source URL: {args.source_url or '(not set)'}",
+                    f"- Archive URL: {args.archive_url or '(not set)'}",
+                    f"- Outcome: run scaffold created",
+                    "",
+                ]
+            ),
+        )
+
+    print(run_path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

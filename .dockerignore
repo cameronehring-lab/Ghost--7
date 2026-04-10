@@ -1,0 +1,7 @@
+.env
+backend/.env
+env_temp
+.git
+.venv
+__pycache__
+*.pyc

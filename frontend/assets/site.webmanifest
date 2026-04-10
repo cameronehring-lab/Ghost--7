@@ -1,0 +1,21 @@
+{
+  "name": "OMEGA Protocol",
+  "short_name": "OMEGA",
+  "description": "Ghost Interface",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000300",
+  "theme_color": "#03150d",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

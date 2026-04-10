@@ -1,0 +1,12 @@
+{
+  "source_directories": [
+    "/Users/cehring/OMEGA4",
+    "/Users/cehring/OMEGA4/backend",
+    "/Users/cehring/OMEGA4/scripts"
+  ],
+  "search_path": [
+    "/Users/cehring/OMEGA4/.venv/lib/python3.14/site-packages",
+    "/Users/cehring/OMEGA4/backend"
+  ],
+  "python_executable": "/Users/cehring/OMEGA4/.venv/bin/python"
+}

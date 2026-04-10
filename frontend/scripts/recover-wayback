@@ -1,0 +1,602 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from change_recording_lib import (
+    append_jsonl,
+    append_text,
+    build_evidence_markdown,
+    build_timeline_markdown,
+    default_record,
+    ensure_dir,
+    guessed_mime_type,
+    iso_utc,
+    load_jsonl,
+    local_timestamp,
+    record_id,
+    resolve_workspace,
+    sha256_for_file,
+    slugify,
+    utc_now,
+    write_json,
+    write_text,
+)
+
+CDX_API = "https://web.archive.org/cdx/search/cdx"
+USER_AGENT = "uap-research-recover/0.1"
+MAX_RESULTS = 25
+
+
+class UI:
+    def __init__(self, *, color: bool, debug: bool) -> None:
+        self.color = color
+        self.debug_enabled = debug
+
+    def paint(self, text: str, code: str) -> str:
+        if not self.color:
+            return text
+        return f"\033[{code}m{text}\033[0m"
+
+    def banner(self, title: str, subtitle: str) -> None:
+        line = "=" * 72
+        print(self.paint(line, "36;1"))
+        print(self.paint(title, "96;1"))
+        print(self.paint(subtitle, "90"))
+        print(self.paint(line, "36;1"))
+
+    def section(self, step: str, label: str, message: str) -> None:
+        prefix = self.paint(f"[{step}]", "35;1")
+        label_text = self.paint(label, "94;1")
+        print(f"{prefix} {label_text} :: {message}")
+
+    def debug(self, step: str, message: str) -> None:
+        if self.debug_enabled:
+            print(f"{self.paint(f'[{step}]', '35;1')} {message}")
+
+    def board(self, rows: list[dict[str, Any]]) -> None:
+        if not rows:
+            return
+        print(self.paint("-" * 72, "90"))
+        print(self.paint("TOP CAPTURES", "93;1"))
+        print(self.paint("rank  timestamp        score   host", "90"))
+        for idx, row in enumerate(rows, start=1):
+            host = urllib.parse.urlparse(row["original"]).netloc or row["original"]
+            score = self.paint(f"{row['quant_score']:>6.2f}", "92;1" if row["quant_score"] >= 80 else "93")
+            print(f"{idx:>4}  {row['timestamp']}  {score}  {host}")
+        print(self.paint("-" * 72, "90"))
+
+    def summary(self, payload: dict[str, Any]) -> None:
+        print(self.paint("=" * 72, "36;1"))
+        print(self.paint("RECOVERY SUMMARY", "92;1"))
+        for label, value in payload.items():
+            print(f"{self.paint(label + ':', '90'):<24} {value}")
+        print(self.paint("=" * 72, "36;1"))
+
+
+def normalize_url(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        raise ValueError("target URL is required")
+    if "://" not in value:
+        value = f"https://{value}"
+    parsed = urllib.parse.urlparse(value)
+    if not parsed.netloc:
+        raise ValueError(f"invalid URL: {raw}")
+    path = parsed.path or "/"
+    return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, parsed.params, parsed.query, parsed.fragment))
+
+
+def canonical_url_for_compare(url: str) -> str:
+    parsed = urllib.parse.urlparse(normalize_url(url))
+    host = parsed.netloc.lower()
+    if host.startswith("www."):
+        host = host[4:]
+    path = parsed.path.rstrip("/") or "/"
+    return urllib.parse.urlunparse(("", host, path, "", parsed.query, ""))
+
+
+def url_host_kind(url: str) -> str:
+    host = urllib.parse.urlparse(url).netloc.lower()
+    if host.endswith(".gov") or host == "gov":
+        return "gov"
+    if host.endswith(".mil") or host == "mil":
+        return "mil"
+    if host.endswith(".edu") or host == "edu":
+        return "edu"
+    if host.endswith(".org") or host == "org":
+        return "org"
+    if host.endswith(".com") or host == "com":
+        return "com"
+    if host.endswith(".net") or host == "net":
+        return "net"
+    return "other"
+
+
+def request_json(url: str, params: dict[str, Any]) -> Any:
+    full_url = f"{url}?{urllib.parse.urlencode(params, doseq=True)}"
+    req = urllib.request.Request(full_url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=60) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_bytes(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=60) as response:
+        return response.read()
+
+
+def parse_wayback_ts(timestamp: str) -> datetime:
+    return datetime.strptime(timestamp, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+
+
+def query_cdx(url: str, *, from_date: str | None, to_date: str | None, limit: int) -> list[dict[str, str]]:
+    params = {
+        "url": url,
+        "output": "json",
+        "fl": "timestamp,original,statuscode,digest,mimetype,length",
+        "filter": "statuscode:200",
+        "collapse": "digest",
+        "matchType": "exact",
+        "limit": str(limit),
+        "fastLatest": "true",
+    }
+    if from_date:
+        params["from"] = from_date
+    if to_date:
+        params["to"] = to_date
+
+    data = request_json(CDX_API, params)
+    if len(data) <= 1:
+        return []
+    headers = data[0]
+    return [dict(zip(headers, row)) for row in data[1:]]
+
+
+def query_variants(url: str) -> list[str]:
+    parsed = urllib.parse.urlparse(url)
+    hosts = [parsed.netloc]
+    if parsed.netloc.startswith("www."):
+        hosts.append(parsed.netloc[4:])
+    else:
+        hosts.append(f"www.{parsed.netloc}")
+
+    variants: list[str] = []
+    for host in hosts:
+        for scheme in (parsed.scheme or "https", "http" if (parsed.scheme or "https") == "https" else "https"):
+            variants.append(urllib.parse.urlunparse((scheme, host, parsed.path, parsed.params, parsed.query, parsed.fragment)))
+        variants.append(urllib.parse.urlunparse(("", host, parsed.path, parsed.params, parsed.query, parsed.fragment)).lstrip("/"))
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for candidate in variants:
+        if candidate and candidate not in seen:
+            deduped.append(candidate)
+            seen.add(candidate)
+    return deduped
+
+
+def query_with_fallbacks(url: str, *, from_date: str | None, to_date: str | None, limit: int) -> tuple[list[dict[str, str]], str]:
+    for candidate in query_variants(url):
+        captures = query_cdx(candidate, from_date=from_date, to_date=to_date, limit=limit)
+        if captures:
+            return captures, candidate
+    return [], url
+
+
+def quant_score(
+    capture: dict[str, str],
+    *,
+    target_url: str,
+    target_date: datetime | None,
+    known_digests: set[str],
+    known_archive_urls: set[str],
+    recency_rank: int,
+    total: int,
+) -> tuple[float, dict[str, float]]:
+    original = capture.get("original", target_url)
+    exact_requested = canonical_url_for_compare(original) == canonical_url_for_compare(target_url)
+    same_host = urllib.parse.urlparse(canonical_url_for_compare(original)).netloc.lower() == urllib.parse.urlparse(
+        canonical_url_for_compare(target_url)
+    ).netloc.lower()
+
+    q_score = 20.0 if exact_requested else 14.0 if same_host else 8.0
+
+    digest = capture.get("digest", "")
+    if digest and digest in known_digests:
+        u_score = 6.0
+    elif digest:
+        u_score = 20.0
+    else:
+        u_score = 10.0
+
+    authority_map = {
+        "gov": 20.0,
+        "mil": 20.0,
+        "edu": 16.0,
+        "org": 13.0,
+        "com": 10.0,
+        "net": 9.0,
+        "other": 7.0,
+    }
+    a_score = authority_map[url_host_kind(original)]
+
+    replay_url = f"https://web.archive.org/web/{capture['timestamp']}/{original}"
+    if replay_url in known_archive_urls:
+        n_score = 0.0
+    elif digest and digest in known_digests:
+        n_score = 7.0
+    else:
+        n_score = 20.0
+
+    capture_dt = parse_wayback_ts(capture["timestamp"])
+    if target_date:
+        delta_days = abs((capture_dt.date() - target_date.date()).days)
+        t_score = max(0.0, 20.0 - min(20.0, (delta_days / 180.0) * 20.0))
+    else:
+        denominator = max(1, total - 1)
+        t_score = max(0.0, 20.0 - ((recency_rank / denominator) * 20.0))
+
+    breakdown = {
+        "query_fit": round(q_score, 2),
+        "uniqueness": round(u_score, 2),
+        "authority": round(a_score, 2),
+        "novelty": round(n_score, 2),
+        "temporal_fit": round(t_score, 2),
+    }
+    total_score = round(sum(breakdown.values()), 2)
+    return total_score, breakdown
+
+
+def extension_for_capture(mimetype: str, source_url: str) -> str:
+    mime_map = {
+        "text/html": ".html",
+        "application/pdf": ".pdf",
+        "text/plain": ".txt",
+        "application/json": ".json",
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif",
+        "image/webp": ".webp",
+        "video/mp4": ".mp4",
+        "audio/mpeg": ".mp3",
+    }
+    if mimetype in mime_map:
+        return mime_map[mimetype]
+    guessed = Path(urllib.parse.urlparse(source_url).path).suffix
+    return guessed or ".bin"
+
+
+def choose_capture(captures: list[dict[str, Any]], requested_timestamp: str | None) -> dict[str, Any]:
+    if requested_timestamp:
+        for capture in captures:
+            if capture["timestamp"] == requested_timestamp:
+                return capture
+        raise ValueError(f"timestamp not found in ranked captures: {requested_timestamp}")
+    return max(captures, key=lambda row: (row["quant_score"], row["timestamp"]))
+
+
+def append_journal_entries(
+    workspace: Path,
+    *,
+    run_id: str,
+    reason: str,
+    source_url: str,
+    archive_url: str,
+    notes: str,
+) -> None:
+    append_text(
+        workspace / "journal" / "research-log.md",
+        "\n".join(
+            [
+                f"## {local_timestamp()} - recover - {run_id}",
+                "",
+                f"- Reason: {reason}",
+                f"- Source URL: {source_url}",
+                f"- Archive URL: {archive_url}",
+                f"- Notes: {notes}",
+                "",
+            ]
+        ),
+    )
+    append_text(
+        workspace / "journal" / "recovery-log.md",
+        "\n".join(
+            [
+                f"## {local_timestamp()} - {run_id}",
+                "",
+                "- Mode: recover",
+                f"- Source URL: {source_url}",
+                f"- Archive URL: {archive_url}",
+                f"- Outcome: {notes}",
+                "",
+            ]
+        ),
+    )
+
+
+def save_artifact(workspace: Path, *, source_url: str, timestamp: str, mimetype: str, payload: bytes) -> Path:
+    capture_dt = parse_wayback_ts(timestamp)
+    parsed = urllib.parse.urlparse(source_url)
+    stem_parts = [parsed.netloc, parsed.path.strip("/").replace("/", "-")]
+    stem = slugify("-".join(part for part in stem_parts if part))
+    extension = extension_for_capture(mimetype, source_url)
+    artifact_dir = workspace / "artifacts" / "raw" / capture_dt.strftime("%Y") / capture_dt.strftime("%m") / capture_dt.strftime("%d")
+    ensure_dir(artifact_dir)
+    artifact_path = artifact_dir / f"{stem}-{timestamp}{extension}"
+    artifact_path.write_bytes(payload)
+    return artifact_path
+
+
+def rebuild_exports(workspace: Path) -> None:
+    sources = load_jsonl(workspace / "ledger" / "sources.jsonl")
+    captures = load_jsonl(workspace / "ledger" / "captures.jsonl")
+    artifacts = load_jsonl(workspace / "ledger" / "artifacts.jsonl")
+    claims = load_jsonl(workspace / "ledger" / "claims.jsonl")
+    events = load_jsonl(workspace / "ledger" / "events.jsonl")
+    write_text(workspace / "exports" / "timeline.md", build_timeline_markdown(events))
+    write_text(
+        workspace / "exports" / "evidence-log.md",
+        build_evidence_markdown(
+            sources=sources,
+            captures=captures,
+            artifacts=artifacts,
+            claims=claims,
+            events=events,
+        ),
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Recover a Wayback capture, save it locally, and record it in the research ledgers.")
+    parser.add_argument("target_url", help="The original page URL to recover.")
+    parser.add_argument("--workspace", help="Research workspace root.")
+    parser.add_argument("--from", dest="from_date", help="CDX from date, for example 20170101.")
+    parser.add_argument("--to", dest="to_date", help="CDX to date, for example 20211231.")
+    parser.add_argument("--target-date", help="Optional YYYY-MM-DD date used for QUANT temporal scoring.")
+    parser.add_argument("--timestamp", help="Specific Wayback timestamp to recover.")
+    parser.add_argument("--limit", type=int, default=MAX_RESULTS, help="Maximum number of unique captures to inspect.")
+    parser.add_argument("--reason", default="Recover an archived page via the Wayback pipeline.", help="Reason stored in the ledgers.")
+    parser.add_argument("--notes", default="", help="Additional notes appended to journals and run metadata.")
+    parser.add_argument("--debug", action="store_true", help="Print step-by-step diagnostic output.")
+    parser.add_argument("--plain", action="store_true", help="Disable ANSI styling and formatted terminal output.")
+    parser.add_argument("--json", action="store_true", help="Print the final summary as JSON instead of a styled board.")
+    parser.add_argument("--skip-exports", action="store_true", help="Do not rebuild Markdown exports after capture.")
+    args = parser.parse_args()
+
+    workspace = resolve_workspace(args.workspace)
+    now = utc_now()
+    target_url = normalize_url(args.target_url)
+    ui = UI(color=sys.stdout.isatty() and not args.plain, debug=args.debug)
+    target_date = None
+    if args.target_date:
+        target_date = datetime.strptime(args.target_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    ui.banner("UAP ARCHIVE RECOVERY :: WAYBACK MODE", f"target={target_url} | workspace={workspace}")
+    ui.section("1/7", "QUERY", f"Searching CDX for {target_url}")
+    captures, query_used = query_with_fallbacks(target_url, from_date=args.from_date, to_date=args.to_date, limit=args.limit)
+    if not captures:
+        raise SystemExit(f"no archived captures found for {target_url}")
+    ui.debug("1/7", f"CDX matched using query variant {query_used}")
+
+    existing_captures = load_jsonl(workspace / "ledger" / "captures.jsonl")
+    known_digests = {row.get("wayback_digest", "") for row in existing_captures if row.get("wayback_digest")}
+    known_archives = {row.get("archive_url", "") for row in existing_captures if row.get("archive_url")}
+
+    ui.section("2/7", "QUANT", f"Scoring {len(captures)} captures")
+    sorted_by_time = sorted(captures, key=lambda row: row["timestamp"], reverse=True)
+    ranked: list[dict[str, Any]] = []
+    for rank, capture in enumerate(sorted_by_time):
+        score, breakdown = quant_score(
+            capture,
+            target_url=target_url,
+            target_date=target_date,
+            known_digests=known_digests,
+            known_archive_urls=known_archives,
+            recency_rank=rank,
+            total=len(sorted_by_time),
+        )
+        enriched = dict(capture)
+        enriched["quant_score"] = score
+        enriched["quant_breakdown"] = breakdown
+        ranked.append(enriched)
+
+    ranked.sort(key=lambda row: (row["quant_score"], row["timestamp"]), reverse=True)
+    ui.board(ranked[:5])
+    if args.debug:
+        for idx, row in enumerate(ranked[:5], start=1):
+            ui.debug(
+                "2/7",
+                f"rank {idx}: {row['timestamp']} score={row['quant_score']:.2f} "
+                f"breakdown={json.dumps(row['quant_breakdown'], sort_keys=True)} url={row['original']}",
+            )
+
+    chosen = choose_capture(ranked, args.timestamp)
+    replay_url = f"https://web.archive.org/web/{chosen['timestamp']}/{chosen['original']}"
+    raw_url = f"https://web.archive.org/web/{chosen['timestamp']}id_/{chosen['original']}"
+
+    ui.section("3/7", "SELECT", f"Using capture {chosen['timestamp']} with QUANT {chosen['quant_score']:.2f}")
+    ui.debug("3/7", json.dumps(chosen["quant_breakdown"], sort_keys=True))
+    payload = fetch_bytes(raw_url)
+    artifact_path = save_artifact(
+        workspace,
+        source_url=chosen["original"],
+        timestamp=chosen["timestamp"],
+        mimetype=chosen.get("mimetype", ""),
+        payload=payload,
+    )
+    artifact_hash = sha256_for_file(artifact_path)
+
+    ui.section("4/7", "SAVE", f"Artifact stored at {artifact_path}")
+
+    slug = slugify(f"{urllib.parse.urlparse(chosen['original']).netloc}-{Path(urllib.parse.urlparse(chosen['original']).path).name or 'capture'}")
+    run_id = record_id("run", f"recover-{slug}", dt=now)
+    source_id = record_id("source", slug, dt=now)
+    capture_id = record_id("capture", slug, dt=now)
+    artifact_id = record_id("artifact", slug, dt=now)
+    event_id = record_id("event", f"recover-{slug}", dt=now)
+
+    confidence = round(min(1.0, chosen["quant_score"] / 100.0), 2)
+    event_summary = (
+        f"Recovered {chosen['original']} from {chosen['timestamp']} with QUANT "
+        f"{chosen['quant_score']:.2f}. Saved to {artifact_path}."
+    )
+
+    source_row = default_record(
+        source_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=replay_url,
+        artifact_hash=artifact_hash,
+        related_event_ids=[event_id],
+        confidence=confidence,
+    )
+    source_row.update(
+        {
+            "title": chosen["original"],
+            "source_type": "web",
+            "source_domain": urllib.parse.urlparse(chosen["original"]).netloc.lower(),
+            "capture_method": "recover-wayback",
+            "run_id": run_id,
+        }
+    )
+
+    capture_row = default_record(
+        capture_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=replay_url,
+        artifact_hash=artifact_hash,
+        related_event_ids=[event_id],
+        confidence=confidence,
+    )
+    capture_row.update(
+        {
+            "archive_provider": "wayback",
+            "capture_timestamp": chosen["timestamp"],
+            "raw_archive_url": raw_url,
+            "replay_url": replay_url,
+            "wayback_digest": chosen.get("digest", ""),
+            "mimetype": chosen.get("mimetype", ""),
+            "capture_length": int(chosen.get("length") or 0),
+            "quant_score": chosen["quant_score"],
+            "quant_breakdown": chosen["quant_breakdown"],
+            "artifact_path": str(artifact_path),
+            "run_id": run_id,
+        }
+    )
+
+    artifact_row = default_record(
+        artifact_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=raw_url,
+        artifact_hash=artifact_hash,
+        related_event_ids=[event_id],
+        confidence=confidence,
+    )
+    artifact_row.update(
+        {
+            "title": artifact_path.name,
+            "artifact_path": str(artifact_path),
+            "artifact_size_bytes": artifact_path.stat().st_size,
+            "mime_type": chosen.get("mimetype") or guessed_mime_type(artifact_path),
+            "capture_id": capture_id,
+            "run_id": run_id,
+            "quant_score": chosen["quant_score"],
+        }
+    )
+
+    event_row = default_record(
+        event_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=replay_url,
+        artifact_hash=artifact_hash,
+        confidence=confidence,
+    )
+    event_row.update(
+        {
+            "title": f"Recovered archived page: {urllib.parse.urlparse(chosen['original']).netloc}",
+            "summary": event_summary,
+            "event_date": iso_utc(now)[:10],
+            "category": "recovery",
+            "run_id": run_id,
+        }
+    )
+
+    run_payload = default_record(
+        run_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=replay_url,
+        artifact_hash=artifact_hash,
+        related_event_ids=[event_id],
+        confidence=confidence,
+    )
+    run_payload.update(
+        {
+            "run_id": run_id,
+            "mode": "recover",
+            "status": "complete",
+            "notes": args.notes or event_summary,
+            "workspace_root": str(workspace),
+            "selected_capture_timestamp": chosen["timestamp"],
+            "selected_capture_score": chosen["quant_score"],
+            "selected_capture_breakdown": chosen["quant_breakdown"],
+            "artifact_path": str(artifact_path),
+        }
+    )
+
+    append_jsonl(workspace / "ledger" / "sources.jsonl", source_row)
+    append_jsonl(workspace / "ledger" / "captures.jsonl", capture_row)
+    append_jsonl(workspace / "ledger" / "artifacts.jsonl", artifact_row)
+    append_jsonl(workspace / "ledger" / "events.jsonl", event_row)
+
+    run_dir = workspace / "ledger" / "ingest-runs" / now.strftime("%Y") / now.strftime("%m")
+    ensure_dir(run_dir)
+    run_path = run_dir / f"{now.strftime('%d-%H%M%S')}.json"
+    write_json(run_path, run_payload)
+
+    ui.section("5/7", "LEDGER", f"Wrote source, capture, artifact, event, and run records")
+
+    append_journal_entries(
+        workspace,
+        run_id=run_id,
+        reason=args.reason,
+        source_url=target_url,
+        archive_url=replay_url,
+        notes=args.notes or event_summary,
+    )
+
+    if not args.skip_exports:
+        ui.section("6/7", "EXPORTS", "Regenerating timeline and evidence log")
+        rebuild_exports(workspace)
+
+    ui.section("7/7", "DONE", "Recovery completed successfully")
+    summary = {
+        "run_id": run_id,
+        "target_url": target_url,
+        "capture_timestamp": chosen["timestamp"],
+        "quant_score": f"{chosen['quant_score']:.2f}",
+        "artifact_path": str(artifact_path),
+        "artifact_hash": artifact_hash,
+        "replay_url": replay_url,
+        "run_path": str(run_path),
+    }
+    if args.json:
+        print(json.dumps(summary, indent=2, sort_keys=True))
+    else:
+        ui.summary(summary)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

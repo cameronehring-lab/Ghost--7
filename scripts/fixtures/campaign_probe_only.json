@@ -1,0 +1,42 @@
+{
+  "run_id": "probe_only_campaign",
+  "base_url": "http://localhost:8000",
+  "seed": 4242,
+  "repeats": 2,
+  "artifacts_dir": "backend/data/experiments",
+  "scenarios": [
+    {
+      "type": "latency_spike_probe",
+      "name": "latency_spike_probe",
+      "params": {
+        "label": "latency_spike_probe",
+        "duration_seconds": 6,
+        "settle_seconds": 1,
+        "sample_seconds": 6,
+        "persist": true
+      }
+    },
+    {
+      "type": "barometric_storm_probe",
+      "name": "barometric_storm_probe",
+      "params": {
+        "label": "barometric_storm_probe",
+        "duration_seconds": 6,
+        "settle_seconds": 1,
+        "sample_seconds": 6,
+        "persist": true
+      }
+    },
+    {
+      "type": "somatic_shock_control",
+      "name": "somatic_shock_control",
+      "params": {
+        "label": "somatic_shock_control",
+        "duration_seconds": 5,
+        "settle_seconds": 1,
+        "sample_seconds": 5,
+        "persist": true
+      }
+    }
+  ]
+}

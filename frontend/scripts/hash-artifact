@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from change_recording_lib import (
+    append_jsonl,
+    default_record,
+    guessed_mime_type,
+    iso_utc,
+    record_id,
+    resolve_workspace,
+    sha256_for_file,
+)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Hash an artifact and optionally append an artifacts ledger row.")
+    parser.add_argument("artifact", help="Path to the local file.")
+    parser.add_argument("--workspace", help="Research workspace root.")
+    parser.add_argument("--append-ledger", action="store_true", help="Append the artifact metadata to artifacts.jsonl.")
+    parser.add_argument("--reason", default="Record artifact metadata.", help="Why this artifact is being recorded.")
+    parser.add_argument("--source-url", default="", help="Original source URL.")
+    parser.add_argument("--archive-url", default="", help="Archive URL.")
+    parser.add_argument("--related-entity-id", action="append", default=[], help="Repeat for linked entities.")
+    parser.add_argument("--related-event-id", action="append", default=[], help="Repeat for linked events.")
+    parser.add_argument("--confidence", type=float, default=1.0, help="Operator confidence for the ledger row.")
+    parser.add_argument("--title", default="", help="Optional artifact title.")
+    args = parser.parse_args()
+
+    artifact_path = Path(args.artifact).expanduser().resolve()
+    if not artifact_path.exists():
+        raise SystemExit(f"artifact not found: {artifact_path}")
+
+    digest = sha256_for_file(artifact_path)
+    payload = {
+        "artifact_path": str(artifact_path),
+        "artifact_hash": digest,
+        "artifact_size_bytes": artifact_path.stat().st_size,
+        "mime_type": guessed_mime_type(artifact_path),
+        "retrieval_timestamp": iso_utc(),
+        "title": args.title or artifact_path.name,
+    }
+
+    if args.append_ledger:
+        workspace = resolve_workspace(args.workspace)
+        row = default_record(
+            record_id("artifact", artifact_path.stem),
+            reason=args.reason,
+            source_url=args.source_url,
+            archive_url=args.archive_url,
+            artifact_hash=digest,
+            related_entity_ids=args.related_entity_id,
+            related_event_ids=args.related_event_id,
+            confidence=args.confidence,
+        )
+        row.update(payload)
+        append_jsonl(workspace / "ledger" / "artifacts.jsonl", row)
+
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

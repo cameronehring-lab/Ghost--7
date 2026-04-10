@@ -1,0 +1,37 @@
+.env
+env_temp
+docs/*.local.md
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+node_modules/
+influx_data/
+redis_data/
+pg_data/
+ollama_data/
+
+# Large media / runtime artifacts
+*.mp4
+*.mp3
+*.wav
+
+# Runtime data directories
+backend/data/dream_assets/
+backend/data/experiments/
+backend/data/hf/
+backend/data/models/
+backend/data/psych_eval/
+backend/data/tts_cache/
+backend/data/tts_models/
+backend/data/world_model/
+backend/data/observer_reports/
+backend/backend/
+
+# Editor / IDE
+.vscode/
+.sfdx/
+
+# Misc
+baseline_day_0.txt
+*.local.md
