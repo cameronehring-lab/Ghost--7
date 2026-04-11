@@ -3142,6 +3142,24 @@ def _log_search_queries(response):
 
 
 async def _generate_with_retry_gemini(contents: Any, config: Any, model: str, max_retries: int) -> Any:
+    # Disable Automatic Function Calling (AFC) for all generate_content calls.
+    # We perform manual tool dispatch via candidate_parts inspection in ghost_stream.
+    # AFC is enabled by default in google-genai >=1.9 and intercepts function_call
+    # parts before our loop sees them, causing thought_simulation and other tools
+    # to silently fail. Explicitly disable it here so the SDK returns the raw
+    # function_call parts in candidates[0].content.parts as expected.
+    _afc_disable = types.AutomaticFunctionCallingConfig(disable=True)
+    if config is None:
+        config = types.GenerateContentConfig(automatic_function_calling=_afc_disable)
+    elif isinstance(config, types.GenerateContentConfig):
+        if (
+            config.automatic_function_calling is None
+            or config.automatic_function_calling.disable is not True
+        ):
+            config = config.model_copy(update={"automatic_function_calling": _afc_disable})
+    elif isinstance(config, dict):
+        if config.get("automatic_function_calling") is None:
+            config = dict(config, automatic_function_calling=_afc_disable)
     for attempt in range(max(1, int(max_retries))):
         try:
             client = get_client()

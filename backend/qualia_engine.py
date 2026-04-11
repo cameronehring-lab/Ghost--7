@@ -62,6 +62,7 @@ Generate a highly detailed phenomenological breakdown of this experience across 
             config={
                 "response_mime_type": "application/json",
                 "response_schema": QualiaSynthesis,
+                "automatic_function_calling": {"disable": True},
             }
         )
         payload = response.text or "{}"
