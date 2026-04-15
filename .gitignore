@@ -32,6 +32,16 @@ backend/backend/
 .vscode/
 .sfdx/
 
+# AI tool workspaces (never commit — contain live credentials and session data)
+.claude/
+.gemini/
+
+# Ghost runtime authoring artifacts (version snapshots are runtime data, not source)
+backend/ghost_writings/.versions/
+
+# Live log files
+backend/server.log
+
 # Misc
 baseline_day_0.txt
 *.local.md
