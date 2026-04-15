@@ -41,6 +41,13 @@ _TARGETED_TESTS = (
     "backend.test_ghost_api_external_context",
 )
 
+def _get_test_modules(repo_root: Path) -> list[str]:
+    if (repo_root / "test_ghost_api_action_confirmation.py").is_file():
+        return [t.replace("backend.", "") for t in _TARGETED_TESTS]
+    return list(_TARGETED_TESTS)
+
+
+
 
 @dataclass
 class CheckResult:
@@ -193,7 +200,7 @@ def _check_policy_guard(base_url: str, *, timeout_seconds: float, basic_auth: tu
 
 def _run_targeted_tests(repo_root: Path, *, timeout_seconds: float) -> CheckResult:
     t0 = time.time()
-    cmd = [sys.executable, "-m", "unittest", "-q", *_TARGETED_TESTS]
+    cmd = [sys.executable, "-m", "unittest", "-q", *_get_test_modules(repo_root)]
     code, stdout, stderr = _run_subprocess(cmd, cwd=repo_root, timeout_seconds=timeout_seconds)
     elapsed_ms = (time.time() - t0) * 1000.0
     if code != 0:
