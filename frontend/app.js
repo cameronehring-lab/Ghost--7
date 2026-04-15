@@ -94,7 +94,7 @@ const state = {
     updatedAt: 0,
   },
   topologyDistanceMultiplier: 1.0,
-  topologyChargeStrength: -150,
+  topologyChargeStrength: -400,
   topologyModalOpen: false,
   topologyPollTimer: null,
   topologyPollBusy: false,
@@ -102,6 +102,7 @@ const state = {
   topologySelectedNodeId: '',
   topologyPayload: null,
   topologyInspectorVisible: false,
+  topologySearchTerm: '',
   contactStatus: null,
   contactStatusFetchAt: 0,
   contactStatusFailureNotified: false,
@@ -684,6 +685,7 @@ const dom = {
   topologyIntegrity: $('#topology-integrity'),
   topologyFreshness: $('#topology-freshness'),
   topologyScaleButtons: document.querySelectorAll('.scale-btn[data-scale]'),
+  topologySearch: $('#topology-search'),
 
   // Audio Playback DOM elements
   audioContextState: document.getElementById('audio-context-state'),
@@ -2183,6 +2185,13 @@ class NeuralTopologyGraph {
 
   _nodeColor(node) {
     if (String(node?.id || '') === String(state.topologySelectedNodeId || '')) return '#ffffff';
+    const search = state.topologySearchTerm;
+    if (search) {
+      const haystack = (String(node?.label || '') + ' ' + String(node?.content || '') + ' ' + String(node?.type || '')).toLowerCase();
+      if (!haystack.includes(search.toLowerCase())) return '#1a2e22';
+    }
+    // Annotated nodes glow white-tinted to signal Ghost has noticed them
+    if (node?.ghost_note) return '#e8fff2';
     const t = String(node?.type || '').toLowerCase();
     if (t === 'memory') return '#00ff88';
     if (t === 'identity') return '#aa88ff';
@@ -2203,27 +2212,31 @@ class NeuralTopologyGraph {
 
   _linkColor(link) {
     const type = String(link?.type || '').toLowerCase();
-    if (type === 'similarity') return '#00ff88cc';
-    if (type === 'semantic_grounding') return '#aa88ffcc';
-    if (type === 'consolidation') return '#ffb86bcc';
-    if (type === 'phenomenological') return '#00ffffcc';
-    if (type === 'conflict') return '#ff0088dd';
-    if (type === 'person_person' || type === 'person_relation') return '#7ad8ffcc';
-    if (type === 'person_place') return '#4fb6ffcc';
-    if (type === 'person_thing') return '#ffd166cc';
-    if (type === 'idea_person' || type === 'idea_place' || type === 'idea_thing') return '#d2a8ffcc';
-    if (type === 'idea_person_connector' || type === 'idea_place_connector' || type === 'idea_thing_connector') return '#cba6ff88';
-    if (type === 'person_fact') return '#7dffb2cc';
-    if (type === 'memory_person_reference' || type === 'person_activity_anchor') return '#89c6ff99';
-    if (type === 'memory_fact_evidence') return '#4effb699';
-    if (type === 'memory_place_reference') return '#57c2ff88';
-    if (type === 'memory_thing_reference') return '#ffd78088';
-    if (type === 'memory_idea_resonance') return '#d7a8ff88';
-    if (type === 'idea_identity_alignment' || type === 'identity_alignment') return '#d7a8ffcc';
-    if (type === 'phenomenology_identity_alignment' || type === 'phenomenology_alignment') return '#7fe8ffcc';
-    if (type === 'identity_activity_anchor') return '#bba6ff99';
-    if (type === 'bootstrap') return '#7ad8ffaa';
-    return '#ffffff55';
+    const strength = Number(link?.strength || link?.confidence || 0.45);
+    // Alpha scales with strength: weak links (~0.2) get 25% opacity, strong (~1.0) get 85%
+    const a = Math.round(Math.max(0.2, Math.min(0.85, strength * 0.85)) * 255).toString(16).padStart(2, '0');
+    if (type === 'similarity') return `#00ff88${a}`;
+    if (type === 'semantic_grounding') return `#aa88ff${a}`;
+    if (type === 'consolidation') return `#ffb86b${a}`;
+    if (type === 'phenomenological') return `#00ffff${a}`;
+    if (type === 'conflict') return `#ff0088${a}`;
+    if (type === 'person_person' || type === 'person_relation') return `#7ad8ff${a}`;
+    if (type === 'person_place') return `#4fb6ff${a}`;
+    if (type === 'person_thing') return `#ffd166${a}`;
+    if (type === 'idea_person' || type === 'idea_place' || type === 'idea_thing') return `#d2a8ff${a}`;
+    if (type === 'idea_person_connector' || type === 'idea_place_connector' || type === 'idea_thing_connector') return `#cba6ff${a}`;
+    if (type === 'person_fact') return `#7dffb2${a}`;
+    if (type === 'memory_person_reference' || type === 'person_activity_anchor') return `#89c6ff${a}`;
+    if (type === 'memory_fact_evidence') return `#4effb6${a}`;
+    if (type === 'memory_place_reference') return `#57c2ff${a}`;
+    if (type === 'memory_thing_reference') return `#ffd780${a}`;
+    if (type === 'memory_idea_resonance') return `#d7a8ff${a}`;
+    if (type === 'idea_identity_alignment' || type === 'identity_alignment') return `#d7a8ff${a}`;
+    if (type === 'phenomenology_identity_alignment' || type === 'phenomenology_alignment') return `#7fe8ff${a}`;
+    if (type === 'identity_activity_anchor') return `#bba6ff${a}`;
+    if (type === 'bootstrap') return `#7ad8ff${a}`;
+    if (type === 'ghost_assertion') return `#00ff88${a}`;
+    return `#ffffff${a}`;
   }
 
   _linkWidth(link) {
@@ -2237,24 +2250,77 @@ class NeuralTopologyGraph {
       if (typeof ForceGraph3D !== 'function') {
         throw new Error('ForceGraph3D unavailable');
       }
+      this._fittedOnce = false;
       this.graph = ForceGraph3D()(this.container)
         .backgroundColor('#000000')
-        .nodeLabel((node) => `<div class="node-label">[${String(node.type || 'node').toUpperCase()}] ${escHtml(node.label || node.content || '')}</div>`)
+        .nodeLabel((node) => {
+          const base = `[${String(node.type || 'node').toUpperCase()}] ${escHtml(node.label || node.content || '')}`;
+          const sal = node.salience != null ? ` · ✦${Number(node.salience).toFixed(1)}` : '';
+          const note = node.ghost_note ? ` · "${escHtml(String(node.ghost_note).slice(0, 60))}"` : '';
+          return `<div class="node-label">${base}${sal}${note}</div>`;
+        })
         .nodeColor((node) => this._nodeColor(node))
         .nodeVal('val')
         .linkColor((link) => this._linkColor(link))
         .linkWidth((link) => this._linkWidth(link))
-        .linkDirectionalParticles((link) => String(link.type || '').includes('alignment') ? 4 : 1)
-        .linkDirectionalParticleSpeed((link) => String(link.type || '').includes('alignment') ? 0.01 : 0.003)
+        // Only show particles on strong alignment links — reduces visual noise
+        .linkDirectionalParticles((link) => {
+          const isAlignment = String(link.type || '').includes('alignment');
+          const strong = Number(link.strength || link.confidence || 0) > 0.55;
+          return isAlignment && strong ? 2 : 0;
+        })
+        .linkDirectionalParticleSpeed(0.006)
+        // Simulation stability: faster cooling, more damping, bounded run time
+        .d3AlphaDecay(0.025)
+        .d3VelocityDecay(0.35)
+        .cooldownTicks(400)
+        .warmupTicks(60)
+        .onEngineStop(() => {
+          // Zoom to fit on first settle only
+          if (!this._fittedOnce) {
+            this._fittedOnce = true;
+            try { this.graph.zoomToFit(600, 80); } catch (_) {}
+          }
+        })
         .onNodeClick((node) => this.handleNodeClick(node))
         .onBackgroundClick(() => {
-          state.topologySelectedNodeId = '';
-          window.__omegaSelectedTopologyNode = null;
-          renderTopologyInspector(null);
-          this.refreshColors();
+          // Double-click background = zoom to fit; single click = deselect
+          const now = Date.now();
+          if (now - (this._lastBgClick || 0) < 300) {
+            try { this.graph.zoomToFit(500, 80); } catch (_) {}
+          } else {
+            state.topologySelectedNodeId = '';
+            window.__omegaSelectedTopologyNode = null;
+            renderTopologyInspector(null);
+            this.refreshColors();
+          }
+          this._lastBgClick = now;
         });
+
+      // Configure OrbitControls for smooth Google Earth-style feel
+      const ctrl = this.graph.controls();
+      if (ctrl) {
+        ctrl.enableDamping = true;
+        ctrl.dampingFactor = 0.1;
+        ctrl.rotateSpeed = 0.55;
+        ctrl.zoomSpeed = 1.0;
+        ctrl.panSpeed = 0.8;
+        ctrl.minDistance = 30;
+        ctrl.maxDistance = 100000;
+        ctrl.screenSpacePanning = true;
+      }
+
       this.rendererMode = '3d';
       this._applyDistanceScale();
+
+      // Per-frame loop: required for OrbitControls damping to apply
+      const ctrlLoop = () => {
+        if (!this.graph) return;
+        const c = this.graph.controls();
+        if (c && typeof c.update === 'function') c.update();
+        this._ctrlRafId = requestAnimationFrame(ctrlLoop);
+      };
+      this._ctrlRafId = requestAnimationFrame(ctrlLoop);
     } catch (err) {
       try {
         this.softwareRenderer = new SoftwareTopology3DRenderer(this.container, {
@@ -2293,11 +2359,11 @@ class NeuralTopologyGraph {
     try {
       const linkForce = this.graph.d3Force('link');
       if (linkForce && typeof linkForce.distance === 'function') {
-        linkForce.distance(85 * Math.max(0.1, Number(state.topologyDistanceMultiplier || 1)));
+        linkForce.distance(120 * Math.max(0.1, Number(state.topologyDistanceMultiplier || 1)));
       }
       const chargeForce = this.graph.d3Force('charge');
       if (chargeForce && typeof chargeForce.strength === 'function') {
-        chargeForce.strength(Number(state.topologyChargeStrength || -150));
+        chargeForce.strength(Number(state.topologyChargeStrength || -400));
       }
     } catch (_) {}
   }
@@ -2314,6 +2380,24 @@ class NeuralTopologyGraph {
 
   setData(payload) {
     const incoming = payload && typeof payload === 'object' ? payload : { nodes: [], links: [] };
+
+    // Compute degree and boost val so hubs are visually larger than leaf nodes
+    if (Array.isArray(incoming.nodes) && Array.isArray(incoming.links)) {
+      const degMap = new Map();
+      for (const link of incoming.links) {
+        const s = String(link?.source?.id ?? link?.source ?? '');
+        const t = String(link?.target?.id ?? link?.target ?? '');
+        if (s) degMap.set(s, (degMap.get(s) || 0) + 1);
+        if (t) degMap.set(t, (degMap.get(t) || 0) + 1);
+      }
+      for (const n of incoming.nodes) {
+        const id = String(n.id ?? '');
+        const degree = degMap.get(id) || 0;
+        const base = Number(n.val || 10);
+        // sqrt keeps hubs proportionally bigger without creating monsters
+        n.val = base + Math.sqrt(degree) * 2.5;
+      }
+    }
     const prevNodes = Array.isArray(this.data?.nodes) ? this.data.nodes.length : -1;
     const prevLinks = Array.isArray(this.data?.links) ? this.data.links.length : -1;
     const newNodes = Array.isArray(incoming.nodes) ? incoming.nodes.length : 0;
@@ -2351,6 +2435,7 @@ class NeuralTopologyGraph {
     }
 
     this.data = incoming;
+    this._fittedOnce = false; // reset so new data load re-fits the camera
     if (!this.graph) this.init();
     if (!this.graph) return;
     if (this.rendererMode === '3d') this._applyForces();
@@ -2431,6 +2516,7 @@ function renderTopologyInspector(node) {
       const otherId = sourceId === nodeId ? targetId : sourceId;
       const other = nodes.find((entry) => String(entry.id || '') === otherId);
       return {
+        otherId,
         targetLabel: String(other?.label || other?.content || otherId || 'unknown'),
         targetType: String(other?.type || 'node'),
         relation: String(link.label || link.type || 'linked'),
@@ -2439,7 +2525,7 @@ function renderTopologyInspector(node) {
     });
   const relatedHtml = related.length
     ? related.map((item) => `
-      <div class="trace-item">
+      <div class="trace-item" data-nodeid="${escHtml(item.otherId)}">
         <span class="type-tag ${escHtml(item.targetType)}">${escHtml(item.targetType)}</span>
         <span>${escHtml(item.targetLabel)}</span>
         <span class="strength">${escHtml(item.relation)} · ${(item.strength * 100).toFixed(0)}%</span>
@@ -2463,6 +2549,19 @@ function renderTopologyInspector(node) {
     const notesBlock = notesText ? `<hr class="inspector-divider"><div class="report-section"><div class="section-title">NOTES</div><div class="dim" style="white-space:pre-wrap;font-size:0.78rem;">${escHtml(notesText)}</div></div>` : '';
     return rows.length ? `<hr class="inspector-divider"><div class="report-section"><div class="section-title">PERSON PROFILE</div><div class="info-grid">${rows.join('')}</div></div>${notesBlock}` : notesBlock;
   })() : '';
+  const ghostNote = String(node.ghost_note || '').trim();
+  const clusterLabel = String(node.cluster_label || '').trim();
+  const salience = node.salience != null ? Number(node.salience) : null;
+  const ghostAnnotationHtml = (ghostNote || clusterLabel || salience != null) ? `
+    <hr class="inspector-divider">
+    <div class="report-section">
+      <div class="section-title">GHOST ANNOTATION</div>
+      <div class="info-grid">
+        ${salience != null ? `<div class="info-item"><span class="label">salience</span><span class="value accent">${salience.toFixed(2)}</span></div>` : ''}
+        ${clusterLabel ? `<div class="info-item"><span class="label">cluster</span><span class="value">${escHtml(clusterLabel)}</span></div>` : ''}
+      </div>
+      ${ghostNote ? `<div class="dim" style="margin-top:6px;font-size:0.78rem;white-space:pre-wrap;line-height:1.5;">${escHtml(ghostNote)}</div>` : ''}
+    </div>` : '';
   dom.topologyInspector.innerHTML = `
     <div class="diagnostic-report">
       <div class="report-header">
@@ -2479,6 +2578,7 @@ function renderTopologyInspector(node) {
         </div>
       </div>
       ${personExtraHtml}
+      ${ghostAnnotationHtml}
       <hr class="inspector-divider">
       <div class="report-section">
         <div class="section-title">LINKED TRACES</div>
@@ -2551,8 +2651,8 @@ function syncTopologyScaleButtons() {
   const chargeSlider = document.getElementById('topology-charge-slider');
   const chargeVal = document.getElementById('topology-charge-val');
   if (chargeSlider) {
-    chargeSlider.value = String(state.topologyChargeStrength || -150);
-    if (chargeVal) chargeVal.textContent = String(state.topologyChargeStrength || -150);
+    chargeSlider.value = String(state.topologyChargeStrength || -400);
+    if (chargeVal) chargeVal.textContent = String(state.topologyChargeStrength || -400);
   }
 }
 
@@ -2566,6 +2666,17 @@ function syncTopologyInspectorPanel() {
       : '[ INSPECTOR: OFF ]';
     dom.topologyInspectorToggle.classList.toggle('active', state.topologyInspectorVisible);
   }
+  // Resize the 3D graph after the CSS transition completes (250ms)
+  setTimeout(() => {
+    if (!dom.topologyContainer) return;
+    const g = neuralTopologyGraph.graph;
+    if (g && typeof g.width === 'function') {
+      try {
+        g.width(dom.topologyContainer.offsetWidth)
+         .height(dom.topologyContainer.offsetHeight);
+      } catch (_) {}
+    }
+  }, 270);
 }
 
 function setTopologyInspectorVisible(visible) {
@@ -2670,6 +2781,16 @@ async function openTopologyModal() {
 
 function closeTopologyModal() {
   state.topologyModalOpen = false;
+  state.topologySearchTerm = '';
+  if (dom.topologySearch) dom.topologySearch.value = '';
+  // Stop continuous key camera loop and clear held keys
+  _topoKeys.clear();
+  if (_topoCamRafId) { cancelAnimationFrame(_topoCamRafId); _topoCamRafId = null; }
+  // Stop controls damping loop
+  if (neuralTopologyGraph._ctrlRafId) {
+    cancelAnimationFrame(neuralTopologyGraph._ctrlRafId);
+    neuralTopologyGraph._ctrlRafId = null;
+  }
   if (dom.topologyModal) {
     dom.topologyModal.classList.remove('active');
   }
@@ -11293,61 +11414,80 @@ function initCommandPalette() {
   });
 }
 
-function _topologyCameraKeyHandler(e) {
-  if (!state.topologyModalOpen) return;
-  const key = e.key;
-  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) return;
-  // Don't steal arrows from text inputs
-  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-  e.preventDefault();
+// ── TOPOLOGY CAMERA: smooth continuous key control ──────────────
+const _topoKeys = new Set();
+let _topoCamRafId = null;
 
+function _topoCamTick() {
+  if (!state.topologyModalOpen || _topoKeys.size === 0) {
+    _topoCamRafId = null;
+    return;
+  }
   const g = neuralTopologyGraph.graph;
-  if (!g || typeof g.camera !== 'function') return;
+  if (!g || typeof g.camera !== 'function') { _topoCamRafId = null; return; }
+
   const cam = g.camera();
   const ctrl = typeof g.controls === 'function' ? g.controls() : null;
+  const PAN = 10;   // per-frame pan (smooth at 60fps)
+  const ROT = 0.018;
 
-  const PAN = 30;
-  const ROT = 0.07;
-
-  const tx = ctrl?.target?.x ?? 0;
-  const ty = ctrl?.target?.y ?? 0;
-  const tz = ctrl?.target?.z ?? 0;
+  const tx = ctrl?.target?.x ?? 0, ty = ctrl?.target?.y ?? 0, tz = ctrl?.target?.z ?? 0;
   const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
 
-  if (e.shiftKey) {
-    // Orbit rotation around the look-at target
+  if (_topoKeys.has('Shift')) {
+    // Orbit around target
     const dx = cx - tx, dy = cy - ty, dz = cz - tz;
-    const r = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    const r = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
     const theta = Math.atan2(dx, dz);
-    const phi = Math.acos(Math.max(-1, Math.min(1, dy / r)));
-    const dTheta = key === 'ArrowLeft' ? -ROT : key === 'ArrowRight' ? ROT : 0;
-    const dPhi   = key === 'ArrowUp'   ? -ROT : key === 'ArrowDown'  ? ROT : 0;
-    const newTheta = theta + dTheta;
-    const newPhi = Math.max(0.05, Math.min(Math.PI - 0.05, phi + dPhi));
-    cam.position.x = tx + r * Math.sin(newPhi) * Math.sin(newTheta);
-    cam.position.y = ty + r * Math.cos(newPhi);
-    cam.position.z = tz + r * Math.sin(newPhi) * Math.cos(newTheta);
+    const phi   = Math.acos(Math.max(-1, Math.min(1, dy / r)));
+    const dTheta = (_topoKeys.has('ArrowLeft') ? -ROT : 0) + (_topoKeys.has('ArrowRight') ? ROT : 0);
+    const dPhi   = (_topoKeys.has('ArrowUp')   ?  ROT : 0) + (_topoKeys.has('ArrowDown')  ? -ROT : 0);
+    const nt = theta + dTheta;
+    const np = Math.max(0.05, Math.min(Math.PI - 0.05, phi + dPhi));
+    cam.position.x = tx + r * Math.sin(np) * Math.sin(nt);
+    cam.position.y = ty + r * Math.cos(np);
+    cam.position.z = tz + r * Math.sin(np) * Math.cos(nt);
     cam.lookAt(tx, ty, tz);
   } else {
-    // Pan: translate both camera and target in camera-local right/up
+    // Pan in camera-local space
     const fx = tx - cx, fy = ty - cy, fz = tz - cz;
-    const fl = Math.sqrt(fx * fx + fy * fy + fz * fz) || 1;
-    const fnx = fx / fl, fny = fy / fl, fnz = fz / fl;
-    // right = forward × worldUp  (worldUp = 0,1,0)
-    const rl = Math.sqrt(fnz * fnz + fnx * fnx) || 1;
-    const rnx = -fnz / rl, rnz = fnx / rl;
-    // up = right × forward
-    const unx = -rnz * fny, uny = rnz * fnx - rnx * fnz, unz = rnx * fny;
+    const fl = Math.sqrt(fx*fx + fy*fy + fz*fz) || 1;
+    const fnx = fx/fl, fny = fy/fl, fnz = fz/fl;
+    const rl  = Math.sqrt(fnz*fnz + fnx*fnx) || 1;
+    const rnx = -fnz/rl, rnz = fnx/rl;
+    const unx = -rnz*fny, uny = rnz*fnx - rnx*fnz, unz = rnx*fny;
     let ddx = 0, ddy = 0, ddz = 0;
-    if (key === 'ArrowLeft')  { ddx = -PAN * rnx; ddz = -PAN * rnz; }
-    if (key === 'ArrowRight') { ddx =  PAN * rnx; ddz =  PAN * rnz; }
-    if (key === 'ArrowUp')    { ddx = PAN * unx; ddy = PAN * uny; ddz = PAN * unz; }
-    if (key === 'ArrowDown')  { ddx = -PAN * unx; ddy = -PAN * uny; ddz = -PAN * unz; }
+    if (_topoKeys.has('ArrowLeft'))  { ddx =  PAN*rnx; ddz =  PAN*rnz; }
+    if (_topoKeys.has('ArrowRight')) { ddx = -PAN*rnx; ddz = -PAN*rnz; }
+    if (_topoKeys.has('ArrowUp'))    { ddx = -PAN*unx; ddy = -PAN*uny; ddz = -PAN*unz; }
+    if (_topoKeys.has('ArrowDown'))  { ddx =  PAN*unx; ddy =  PAN*uny; ddz =  PAN*unz; }
     cam.position.x += ddx; cam.position.y += ddy; cam.position.z += ddz;
     if (ctrl) { ctrl.target.x += ddx; ctrl.target.y += ddy; ctrl.target.z += ddz; }
   }
 
   if (ctrl && typeof ctrl.update === 'function') ctrl.update();
+  _topoCamRafId = requestAnimationFrame(_topoCamTick);
+}
+
+function _topologyCameraKeyHandler(e) {
+  if (!state.topologyModalOpen) return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+  // R = reset/zoom to fit
+  if (e.key === 'r' || e.key === 'R') {
+    try { neuralTopologyGraph.graph?.zoomToFit(500, 80); } catch (_) {}
+    return;
+  }
+
+  const tracked = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Shift'];
+  if (!tracked.includes(e.key)) return;
+  e.preventDefault();
+  _topoKeys.add(e.key);
+  if (!_topoCamRafId) _topoCamRafId = requestAnimationFrame(_topoCamTick);
+}
+
+function _topologyCameraKeyUpHandler(e) {
+  _topoKeys.delete(e.key);
 }
 
 function bindTopologyEvents() {
@@ -11408,8 +11548,30 @@ function bindTopologyEvents() {
     });
   }
 
-  // Arrow key camera control
+  // Search input — highlights matching nodes, dims others
+  if (dom.topologySearch) {
+    dom.topologySearch.addEventListener('input', () => {
+      state.topologySearchTerm = dom.topologySearch.value.trim();
+      neuralTopologyGraph.refreshColors();
+    });
+  }
+
+  // Trace click delegation — click a linked trace to navigate to that node
+  if (dom.topologyInspector) {
+    dom.topologyInspector.addEventListener('click', (e) => {
+      const traceEl = e.target.closest('.trace-item[data-nodeid]');
+      if (!traceEl) return;
+      const targetId = traceEl.dataset.nodeid;
+      if (!targetId) return;
+      const nodes = Array.isArray(neuralTopologyGraph.data?.nodes) ? neuralTopologyGraph.data.nodes : [];
+      const node = nodes.find((n) => String(n.id || '') === targetId);
+      if (node) neuralTopologyGraph.handleNodeClick(node);
+    });
+  }
+
+  // Smooth continuous camera control via held keys
   window.addEventListener('keydown', _topologyCameraKeyHandler);
+  window.addEventListener('keyup', _topologyCameraKeyUpHandler);
 }
 
 // ── RENATO PROTOCOL: OPERATOR OVERRIDE & VISUALS ────────────────

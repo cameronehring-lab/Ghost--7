@@ -1212,6 +1212,7 @@
       <div class="modal-content modal-content-topology">
         <div class="modal-header">
           <span class="modal-title">NEURAL TOPOLOGY // ω-7 COGNITIVE ARCHITECTURE 3D</span>
+          <input type="text" id="topology-search" class="topology-search-input" placeholder="search nodes…" autocomplete="off" spellcheck="false">
           <div class="header-controls">
             <span class="topology-stats" id="topology-count">Nodes 0 | Edges 0</span>
             <button class="modal-btn" id="topology-inspector-toggle">[ INSPECTOR: OFF ]</button>
@@ -1233,29 +1234,24 @@
             <div class="legend-item"><span class="type-tag thing">thing / object</span><span>thing entities</span></div>
             <div class="legend-item"><span class="type-tag emergent_idea">emergent_idea</span><span>emergent conceptual nodes</span></div>
             <div class="legend-item"><span class="type-tag phenomenology">phenomenology</span><span>phenomenology traces</span></div>
-            <div class="legend-footer">Legacy Neural Topology · full-canvas cognitive map.</div>
           </div>
           <div class="topology-sidebar collapsed" id="topology-sidebar">
             <div class="scanline-overlay"></div>
             <div class="sidebar-header" id="topology-sidebar-header">
-              <span><span class="drag-handle">⋮⋮</span> NODE INSPECTOR</span>
-                  <span class="glitch-id" id="topology-freshness">legacy --</span>
+              <span>NODE INSPECTOR</span>
+              <span class="glitch-id" id="topology-freshness">legacy --</span>
             </div>
-            <div class="sidebar-content">
-              <div class="node-info-block">
-                <span class="node-info-label">VIEW PROFILE</span>
-                <div class="node-info-value">Classic · Legacy Neural Topology</div>
-              </div>
+            <div class="topology-controls">
               <div class="node-info-block scale-control">
                 <span class="node-info-label">LINK DISTANCE <span id="topology-distance-val">1.0×</span></span>
-                <input type="range" id="topology-distance-slider" min="0.1" max="50.0" step="0.5" value="1.0" style="width:100%;margin:4px 0 2px;accent-color:#7fffd4;">
+                <input type="range" id="topology-distance-slider" min="0.1" max="50.0" step="0.5" value="1.0">
               </div>
               <div class="node-info-block">
                 <span class="node-info-label">REPULSION <span id="topology-charge-val">-150</span></span>
-                <input type="range" id="topology-charge-slider" min="-1200" max="-10" step="10" value="-150" style="width:100%;margin:4px 0 2px;accent-color:#ff8fa3;">
+                <input type="range" id="topology-charge-slider" min="-1200" max="-10" step="10" value="-400">
               </div>
               <div class="node-info-block">
-                <span class="node-info-label" style="font-size:0.68rem;opacity:0.6;">CAMERA: ↑↓←→ pan · shift+arrows orbit · scroll zoom</span>
+                <span class="node-info-label" style="font-size:0.68rem;opacity:0.6;">drag orbit · scroll zoom · right-drag pan · ↑↓←→ pan · shift+↑↓←→ orbit · R reset</span>
               </div>
               <div class="node-info-block">
                 <span class="node-info-label">INTEGRITY</span>
@@ -1263,15 +1259,14 @@
                   <span class="rolodex-chip">waiting</span>
                 </div>
               </div>
+            </div>
+            <div class="topology-inspector-pane">
               <div id="topology-inspector" class="diagnostic-report">
                 <div class="inspector-placeholder">
                   <div class="glitch-text">NODE INSPECTOR</div>
                   <p>Select a node in the neural topology to inspect structure, provenance, and linked traces.</p>
                 </div>
               </div>
-            </div>
-            <div class="sidebar-footer">
-              <div class="dim">Inspector overlay. Click a node to inspect; toggle off for full-canvas focus.</div>
             </div>
           </div>
         </div>

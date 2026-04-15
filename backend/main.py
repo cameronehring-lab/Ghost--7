@@ -2050,6 +2050,9 @@ async def lifespan(app: FastAPI):
             # TPCV Repository tables
             import tpcv_repository  # type: ignore
             await tpcv_repository.init_tables(memory._pool)
+            # Topology memory tables (living brain-map layer)
+            import topology_memory  # type: ignore
+            await topology_memory.init_tables(memory._pool)
             # Dream Ledger table
             await init_dream_ledger_table(memory._pool)
             # Seed identity if empty
@@ -4686,6 +4689,13 @@ async def ghost_chat(request: ChatRequest, http_request: Request):
                 "topology_pulse",
                 json.dumps({"node_ids": surfaced_ids, "pulse_type": "recall"})
             )
+            # Bump salience for recalled nodes in the living topology layer
+            try:
+                import topology_memory  # type: ignore
+                node_ids = [f"mem_{mid}" for mid in surfaced_ids]
+                await topology_memory.bump_salience(memory._pool, node_ids)
+            except Exception:
+                pass
     except Exception as e:
         logger.warning(f"Consciousness query failed (non-fatal): {e}")
 

@@ -1209,11 +1209,27 @@ async def ghost_script_loop(
                     # Basic periodic monologue — pass current identity so thoughts
                     # are grounded in who Ghost currently is
                     identity_for_monologue = await consciousness.load_identity(memory._pool)
+                    # Inject living topology context (salient nodes Ghost has been recalling)
+                    _topology_ctx = ""
+                    try:
+                        import topology_memory  # type: ignore
+                        _topology_ctx = await topology_memory.format_topology_context_for_monologue(memory._pool)
+                    except Exception:
+                        pass
                     thought = await generate_monologue(
                         somatic_state, telemetry, recent_thoughts, recent_sessions,
                         cycle=cycle, identity=identity_for_monologue,
+                        topology_context=_topology_ctx,
                     )
                     if thought:
+                        # Dispatch any [TOPOLOGY:...] tags Ghost emitted in the monologue
+                        try:
+                            from ghost_api import parse_topology_tags, dispatch_topology_tags  # type: ignore
+                            _topo_tags = parse_topology_tags(thought)
+                            if _topo_tags:
+                                await dispatch_topology_tags(_topo_tags, memory._pool)
+                        except Exception as _te:
+                            logger.debug("Monologue topology dispatch skipped: %s", _te)
                         saved_text = await _save_monologue_with_metrics(
                             content=thought,
                             prior_thoughts=recent_thoughts,
@@ -1302,6 +1318,14 @@ async def ghost_script_loop(
                 # These are "sleep-style" deep processing tasks
                 await consciousness.run_self_integration_protocol(memory._pool, recent_thoughts)
                 await consciousness.run_conceptual_resonance_protocol(memory._pool, recent_thoughts)
+
+            # Salience decay — gently fade dormant topology nodes every 10 cycles
+            if cycle % 10 == 0:
+                try:
+                    import topology_memory  # type: ignore
+                    await topology_memory.apply_salience_decay(memory._pool)
+                except Exception:
+                    pass
 
             if not quiet_active and recent_thoughts:
                 drive_interval = max(

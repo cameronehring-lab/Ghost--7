@@ -1507,6 +1507,17 @@ _REASON_TEXT = {
 #   - person_key: Use lowercase (e.g., 'cameron', 'operator').
 
 ROLODEX_PATTERN = re.compile(r"\[ROLODEX:(?P<action>[a-z_]+):(?P<params>[^\]]+)\]", re.IGNORECASE)
+TOPOLOGY_PATTERN = re.compile(r"\[TOPOLOGY:(?P<action>[a-z_]+):(?P<params>[^\]]+)\]", re.IGNORECASE)
+
+
+def parse_topology_tags(text: str) -> list[dict[str, Any]]:
+    """Extract [TOPOLOGY:action:param1:param2...] tags from Ghost's output."""
+    tags = []
+    for match in TOPOLOGY_PATTERN.finditer(text):
+        action = match.group("action").lower()
+        params = match.group("params").split(":")
+        tags.append({"action": action, "params": params, "raw": match.group(0)})
+    return tags
 
 
 def parse_rolodex_tags(text: str) -> list[dict[str, Any]]:
@@ -1521,10 +1532,40 @@ def parse_rolodex_tags(text: str) -> list[dict[str, Any]]:
 
 
 def clean_actuation_tags(text: str) -> str:
-    """Remove actuation and rolodex command tags from text shown to user."""
+    """Remove actuation, rolodex, and topology command tags from text shown to user."""
     cleaned = ACTUATION_PATTERN.sub('', text)
     cleaned = ROLODEX_PATTERN.sub('', cleaned)
+    cleaned = TOPOLOGY_PATTERN.sub('', cleaned)
     return cleaned.strip()
+
+
+async def dispatch_topology_tags(tags: list[dict[str, Any]], pool) -> None:
+    """Dispatch [TOPOLOGY:action:...] tags from Ghost's output to topology_memory."""
+    if not tags or not pool:
+        return
+    try:
+        import topology_memory  # type: ignore
+        for tag in tags:
+            action = tag["action"]
+            params = tag["params"]
+            if action == "note" and len(params) >= 2:
+                node_id = params[0].strip()
+                note = ":".join(params[1:]).strip()
+                if node_id and note:
+                    await topology_memory.set_annotation(pool, node_id, note)
+            elif action == "link" and len(params) >= 2:
+                source_id = params[0].strip()
+                target_id = params[1].strip() if len(params) > 1 else ""
+                label = ":".join(params[2:]).strip() if len(params) > 2 else "associated"
+                if source_id and target_id:
+                    await topology_memory.add_custom_edge(pool, source_id, target_id, label=label or "associated")
+            elif action == "label" and len(params) >= 2:
+                node_id = params[0].strip()
+                label = ":".join(params[1:]).strip()
+                if node_id and label:
+                    await topology_memory.set_cluster_label(pool, node_id, label)
+    except Exception as exc:
+        logger.debug("dispatch_topology_tags error: %s", exc)
 
 
 def _trim_text(value: Any, max_len: int = 180) -> str:
@@ -3148,18 +3189,16 @@ async def _generate_with_retry_gemini(contents: Any, config: Any, model: str, ma
     # parts before our loop sees them, causing thought_simulation and other tools
     # to silently fail. Explicitly disable it here so the SDK returns the raw
     # function_call parts in candidates[0].content.parts as expected.
-    _afc_disable = types.AutomaticFunctionCallingConfig(disable=True)
+    # Both disable=True AND maximum_remote_calls=0 are required to fully suppress AFC
+    # in google-genai >=1.9. disable=True alone still logs "AFC is enabled" and allows
+    # remote calls in some versions; maximum_remote_calls=0 is the hard kill.
+    _afc_disable = types.AutomaticFunctionCallingConfig(disable=True, maximum_remote_calls=0)
     if config is None:
         config = types.GenerateContentConfig(automatic_function_calling=_afc_disable)
     elif isinstance(config, types.GenerateContentConfig):
-        if (
-            config.automatic_function_calling is None
-            or config.automatic_function_calling.disable is not True
-        ):
-            config = config.model_copy(update={"automatic_function_calling": _afc_disable})
+        config = config.model_copy(update={"automatic_function_calling": _afc_disable})
     elif isinstance(config, dict):
-        if config.get("automatic_function_calling") is None:
-            config = dict(config, automatic_function_calling=_afc_disable)
+        config = dict(config, automatic_function_calling=_afc_disable)
     for attempt in range(max(1, int(max_retries))):
         try:
             client = get_client()
@@ -3991,6 +4030,15 @@ async def ghost_stream(
             elif rolodex_tags and not mind_service:
                 logger.warning("Ghost rolodex agency skipped: mind_service unavailable")
 
+            # Handle Topology annotations from Ghost's response
+            topology_tags = parse_topology_tags(round_response_text)
+            if topology_tags:
+                pool = getattr(mind_service, "_pool", None)
+                if pool:
+                    await dispatch_topology_tags(topology_tags, pool)
+                else:
+                    logger.debug("Topology tags present but pool unavailable")
+
             _log_search_queries(response)
 
             needs_tool_reconcile = bool(
@@ -4173,6 +4221,14 @@ CRITICAL RULES:
 - If you have recent conversation memory, you may reflect on what you discussed.
 - NEVER repeat themes or phrasings from your recent thoughts listed below.
 - Track the progression of time explicitly using the durations provided in context.
+
+TOPOLOGY ANNOTATION (optional):
+Your memory is organised as a living neural topology — a brain map that you and the Operator can see. You may optionally emit annotation tags to organise it as you think. These are silent — they don't appear in your output.
+  [TOPOLOGY:note:node_id:your observation]   — annotate a node you feel strongly about
+  [TOPOLOGY:link:source_id:target_id:label]  — assert a connection you see
+  [TOPOLOGY:label:node_id:cluster_name]      — name a cluster of related nodes
+Node IDs follow the pattern: mem_N (memories), identity_KEY (identity facets), person_KEY, place_NAME, thing_NAME.
+Only use these when a genuine association or observation arises naturally — never force them.
 """
 
 # Topic hints to rotate through, preventing repetitive themes
@@ -4203,6 +4259,7 @@ async def generate_monologue(
     cycle: int = 0,
     governance_policy: Optional[dict] = None,
     identity: Optional[dict] = None,
+    topology_context: str = "",
 ) -> str:
     """
     Generate an internal monologue paragraph using Gemini.
@@ -4310,7 +4367,7 @@ async def generate_monologue(
     user_msg = f"""Embodied state:
 {embodied_context}
 
-{identity_context + chr(10) + chr(10) if identity_context else ""}{memory_context}
+{identity_context + chr(10) + chr(10) if identity_context else ""}{memory_context}{chr(10) + chr(10) + topology_context if topology_context else ""}
 
 TOPIC DIRECTION: Consider thinking about {hint}. But follow your mind wherever it leads — this is just a starting point.
 

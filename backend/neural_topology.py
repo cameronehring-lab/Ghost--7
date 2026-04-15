@@ -1887,6 +1887,50 @@ async def build_topology_graph(pool, ghost_id: str, similarity_threshold: float 
     except Exception:
         pass
 
+    # ── Merge living topology layer (Ghost's annotations, salience, custom edges) ──
+    try:
+        import topology_memory  # type: ignore
+        # Collect all node IDs in the graph
+        all_node_ids = [str(n.get("id") or "") for n in nodes if n.get("id")]
+        if all_node_ids:
+            node_meta = await topology_memory.get_node_meta(pool, all_node_ids)
+            for node in nodes:
+                nid = str(node.get("id") or "")
+                meta = node_meta.get(nid)
+                if meta:
+                    if meta.get("ghost_note"):
+                        node["ghost_note"] = meta["ghost_note"]
+                    if meta.get("cluster_label"):
+                        node["cluster_label"] = meta["cluster_label"]
+                    sal = float(meta.get("salience") or 0.0)
+                    if sal > 0.1:
+                        # Boost val so salient nodes appear slightly larger
+                        node["salience"] = round(sal, 2)
+                        node["val"] = float(node.get("val") or 10) + sal * 1.5
+        # Merge Ghost's custom edges
+        custom_edges = await topology_memory.get_custom_edges(pool)
+        existing_node_ids = {str(n.get("id") or "") for n in nodes}
+        for edge in custom_edges:
+            src = str(edge.get("source_id") or "")
+            tgt = str(edge.get("target_id") or "")
+            if not src or not tgt:
+                continue
+            # Only add edges between nodes that exist in the graph
+            if src not in existing_node_ids or tgt not in existing_node_ids:
+                continue
+            links.append({
+                "source": src,
+                "target": tgt,
+                "type": "ghost_assertion",
+                "label": str(edge.get("label") or "associated"),
+                "strength": float(edge.get("strength") or 0.7),
+                "ghost_note": str(edge.get("ghost_note") or ""),
+                "color": "#00ff8855",
+                "curvature": 0.25,
+            })
+    except Exception as _topo_exc:
+        logger.debug("topology_memory merge skipped: %s", _topo_exc)
+
     return {
         "nodes": nodes,
         "links": links,
